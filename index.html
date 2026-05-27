@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Care Plan Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;600;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:#f5f7fa; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card { background:#fff; border-radius:16px; padding:48px 40px; max-width:520px; width:100%; box-shadow:0 8px 40px rgba(0,0,0,.10); text-align:center; }
+  h1 { font-family:'DM Serif Display',serif; font-size:30px; color:#1c2b3a; margin-bottom:8px; }
+  .sub { font-size:14px; color:#7a8fa6; margin-bottom:36px; }
+  .btn { display:block; padding:18px 24px; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700; color:#fff; text-decoration:none; margin-bottom:14px; transition:opacity .15s; line-height:1.4; }
+  .btn:hover { opacity:.88; }
+  .btn small { display:block; font-weight:400; font-size:12px; opacity:.85; margin-top:3px; }
+  .btn-conv  { background:#1a6fa8; }
+  .btn-week  { background:#1b4f72; }
+  .footer { margin-top:28px; font-size:11px; color:#7a8fa6; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🏥 Care Plan Tracker</h1>
+  <p class="sub">Select a tracker to get started</p>
+
+  <a href="care-plan-tracker.html" class="btn btn-conv">
+    💬 📋 Care Plan Tracker
+    <small>Care Conversations · Care Reviews · Team Recognition</small>
+  </a>
+
+  <a href="weekly-progress-notes.html" class="btn btn-week">
+    🗓 Weekly Progress Notes
+    <small>Ground Floor · Upper Floor · Sunday Catch-up</small>
+  </a>
+
+  <div class="footer">Hamlyn Care · All data saves to this browser</div>
+</div>
+</body>
+</html>
