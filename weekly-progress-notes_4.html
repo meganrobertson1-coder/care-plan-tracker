@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RN/EN Weekly Progress Notes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #f5f7fa; --card: #fff; --border: #dde3ec;
+    --text: #1c2b3a; --muted: #7a8fa6;
+    --am-hdr: #1a6fa8; --am-chip: #dbeafe; --am-chip-text: #1e3a5f; --am-chip-border: #93c5fd;
+    --pm-hdr: #1a8a5e; --pm-chip: #d1fae5; --pm-chip-text: #064e3b; --pm-chip-border: #6ee7b7;
+    --nd-hdr: #6d3fa0; --nd-chip: #ede9fe; --nd-chip-text: #3b1f6e; --nd-chip-border: #c4b5fd;
+    --done-bg: #d1fae5; --done-text: #065f46; --done-border: #34d399;
+    --na-bg: #fff7ed;  --na-text: #9a3412;  --na-border: #fdba74;
+    --sun-hdr: #b45309; --floor-down: #1b4f72; --floor-up: #5b2c8a;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:24px 20px 56px; }
+
+  /* HEADER */
+  .header { text-align:center; margin-bottom:18px; }
+  .header h1 { font-family:'DM Serif Display',serif; font-size:26px; color:var(--text); letter-spacing:-0.01em; }
+  .header p  { font-size:13px; color:var(--muted); margin-top:5px; }
+
+  /* WEEK NAV */
+  .week-bar { display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .week-nav { display:flex; align-items:center; gap:8px; background:#fff; border:1.5px solid var(--border); border-radius:8px; padding:6px 14px; }
+  .week-nav button { background:none; border:none; font-size:16px; cursor:pointer; color:var(--muted); padding:0 4px; transition:color .15s; }
+  .week-nav button:hover { color:var(--text); }
+  .week-label { font-size:13.5px; font-weight:700; color:var(--text); min-width:220px; text-align:center; }
+
+  /* PROGRESS */
+  .progress-wrap { max-width:1060px; margin:0 auto 16px; background:#fff; border-radius:10px; border:1.5px solid var(--border); padding:12px 20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .progress-floors { display:flex; gap:20px; flex:1; flex-wrap:wrap; }
+  .pf-item { display:flex; flex-direction:column; min-width:100px; }
+  .pf-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:2px; }
+  .pf-label.down { color:var(--floor-down); } .pf-label.up { color:var(--floor-up); }
+  .pf-nums { font-size:18px; font-weight:700; color:var(--text); line-height:1; }
+  .pf-of   { font-size:11px; color:var(--muted); }
+  .progress-bar-wrap { flex:2; min-width:200px; }
+  .pb-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:4px; }
+  .progress-bar-outer { height:10px; background:#edf0f5; border-radius:99px; overflow:hidden; }
+  .progress-bar-inner { height:100%; background:linear-gradient(90deg,#1b4f72,#2ecc71); border-radius:99px; transition:width .35s ease; }
+  .progress-pct { font-size:20px; font-weight:700; color:var(--text); min-width:50px; text-align:right; }
+
+  /* TABS */
+  .tabs { max-width:1060px; margin:0 auto 16px; display:flex; border-radius:10px; overflow:hidden; border:1.5px solid var(--border); background:#fff; }
+  .tab-btn { flex:1; padding:11px 16px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:700; border:none; cursor:pointer; background:#fff; color:var(--muted); border-right:1.5px solid var(--border); transition:all .18s; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .tab-btn:last-child { border-right:none; }
+  .tab-btn.active.down { background:var(--floor-down); color:#fff; }
+  .tab-btn.active.up   { background:var(--floor-up);   color:#fff; }
+  .tab-btn:not(.active):hover { background:#f0f4f8; }
+  .tab-pill { font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; }
+  .tab-btn.active .tab-pill { background:rgba(255,255,255,.25); color:#fff; }
+  .tab-btn:not(.active) .tab-pill { background:#edf0f5; color:var(--muted); }
+
+  /* TOOLBAR */
+  .toolbar { max-width:1060px; margin:0 auto 12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .shift-legend { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .sl-item { display:flex; align-items:center; gap:5px; font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px; border:1.5px solid; }
+  .sl-am   { background:var(--am-chip); color:var(--am-chip-text); border-color:var(--am-chip-border); }
+  .sl-pm   { background:var(--pm-chip); color:var(--pm-chip-text); border-color:var(--pm-chip-border); }
+  .sl-nd   { background:var(--nd-chip); color:var(--nd-chip-text); border-color:var(--nd-chip-border); }
+  .sl-done { background:var(--done-bg); color:var(--done-text);    border-color:var(--done-border); }
+  .sl-na   { background:var(--na-bg);   color:var(--na-text);      border-color:var(--na-border); }
+  .spacer  { flex:1; }
+  .btn-reset { padding:7px 14px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; border:1.5px solid var(--border); border-radius:6px; background:#fff; cursor:pointer; color:var(--muted); transition:all .15s; }
+  .btn-reset:hover { background:#ffeaea; border-color:#f5a0a0; color:#c0392b; }
+  .btn-sunday {
+    padding:7px 14px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600;
+    border:1.5px solid #fde68a; border-radius:6px; background:#fef9c3; cursor:pointer;
+    color:#92400e; transition:all .15s;
+  }
+  .btn-sunday:hover { background:#fde68a; border-color:#f59e0b; }
+  .btn-csv {
+    padding:7px 14px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600;
+    border:1.5px solid #6ee7b7; border-radius:6px; background:#d1fae5; cursor:pointer;
+    color:#065f46; transition:all .15s;
+  }
+  .btn-csv:hover { background:#a7f3d0; border-color:#34d399; }
+  .btn-print { padding:7px 14px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; border:none; border-radius:6px; background:var(--text); cursor:pointer; color:#fff; transition:all .15s; }
+  .btn-print:hover { background:#2c3e50; }
+
+  .hint { text-align:center; font-size:11px; color:var(--muted); margin-bottom:16px; }
+
+  /* FLOOR PANELS */
+  .floor-panel { display:none; }
+  .floor-panel.active { display:block; }
+
+  /* DAY CARDS */
+  .days-wrap { max-width:1060px; margin:0 auto; display:flex; flex-direction:column; gap:12px; }
+  .day-card  { background:var(--card); border-radius:10px; border:1.5px solid var(--border); overflow:hidden; }
+  .day-header { display:flex; align-items:center; justify-content:space-between; padding:9px 16px; background:#1c2b3a; color:#fff; }
+  .day-header.sunday { background:var(--sun-hdr); }
+  .day-name  { font-family:'DM Serif Display',serif; font-size:16px; letter-spacing:.02em; }
+  .day-meta  { font-size:11px; opacity:.7; font-weight:500; }
+  .day-prog  { font-size:12px; font-weight:700; opacity:.9; }
+
+  .shifts-row { display:grid; grid-template-columns:4fr 4fr 3fr; }
+  .shift-col  { border-right:1.5px solid var(--border); padding-bottom:10px; }
+  .shift-col:last-child { border-right:none; }
+  .shift-header { padding:7px 12px; font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#fff; display:flex; justify-content:space-between; align-items:center; }
+  .shift-header.am { background:var(--am-hdr); }
+  .shift-header.pm { background:var(--pm-hdr); }
+  .shift-header.nd { background:var(--nd-hdr); }
+  .shift-count { font-size:10px; font-weight:600; background:rgba(255,255,255,.22); border-radius:10px; padding:2px 7px; }
+  .beds-wrap { padding:9px 10px 6px; display:flex; flex-wrap:wrap; gap:6px; }
+
+  /* BED CHIP — now a flex column to hold code + stamp */
+  .bed {
+    display:inline-flex; flex-direction:column; align-items:center;
+    min-width:52px; padding:5px 7px 4px; border-radius:7px;
+    font-size:11.5px; font-weight:600; letter-spacing:.02em;
+    cursor:pointer; border:1.5px solid transparent;
+    transition:all .14s; user-select:none; position:relative;
+    line-height:1.2;
+  }
+  .bed-code { white-space:nowrap; }
+  .bed-stamp {
+    font-size:9px; font-weight:500; color:inherit; opacity:.75;
+    white-space:nowrap; margin-top:2px; max-width:80px;
+    overflow:hidden; text-overflow:ellipsis; text-align:center;
+  }
+
+  .bed.am.state-pending { background:var(--am-chip); color:var(--am-chip-text); border-color:var(--am-chip-border); }
+  .bed.pm.state-pending { background:var(--pm-chip); color:var(--pm-chip-text); border-color:var(--pm-chip-border); }
+  .bed.nd.state-pending { background:var(--nd-chip); color:var(--nd-chip-text); border-color:var(--nd-chip-border); }
+  .bed.state-pending:hover { filter:brightness(.93); }
+
+  .bed.state-done { background:var(--done-bg)!important; color:var(--done-text)!important; border-color:var(--done-border)!important; }
+  .bed.state-done::after { content:'✓'; position:absolute; top:-5px; right:-5px; font-size:9px; background:#059669; color:#fff; border-radius:50%; width:13px; height:13px; display:flex; align-items:center; justify-content:center; line-height:1; }
+  .bed.state-na  { background:var(--na-bg)!important;   color:var(--na-text)!important;   border-color:var(--na-border)!important; }
+
+  .catchup-note { padding:10px 16px; font-size:12.5px; color:var(--sun-hdr); font-weight:600; font-style:italic; background:#fff8f0; border-top:1.5px solid #fde8cc; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.45); backdrop-filter:blur(3px);
+    z-index:1000; align-items:center; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:#fff; border-radius:14px; padding:28px 28px 22px;
+    width:340px; max-width:95vw;
+    box-shadow:0 20px 60px rgba(0,0,0,.2);
+    animation:modalIn .18s ease;
+  }
+  @keyframes modalIn { from { opacity:0; transform:scale(.93) translateY(8px); } to { opacity:1; transform:none; } }
+
+  .modal-bed-label {
+    font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.08em; color:var(--muted); margin-bottom:6px;
+  }
+  .modal-bed-code {
+    font-family:'DM Serif Display',serif; font-size:22px; color:var(--text);
+    margin-bottom:4px;
+  }
+  .modal-shift-badge {
+    display:inline-block; font-size:10px; font-weight:700;
+    padding:2px 9px; border-radius:10px; margin-bottom:18px;
+    letter-spacing:.06em; text-transform:uppercase;
+  }
+  .modal-shift-badge.am { background:var(--am-chip); color:var(--am-chip-text); border:1px solid var(--am-chip-border); }
+  .modal-shift-badge.pm { background:var(--pm-chip); color:var(--pm-chip-text); border:1px solid var(--pm-chip-border); }
+  .modal-shift-badge.nd { background:var(--nd-chip); color:var(--nd-chip-text); border:1px solid var(--nd-chip-border); }
+
+  .modal label { display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:5px; }
+  .modal input {
+    width:100%; padding:9px 12px; border:1.5px solid var(--border);
+    border-radius:7px; font-family:'DM Sans',sans-serif; font-size:14px;
+    color:var(--text); margin-bottom:14px; outline:none; transition:border .15s;
+  }
+  .modal input:focus { border-color:#1a6fa8; }
+
+  .modal-timestamp {
+    font-size:12px; color:var(--muted); margin-bottom:18px;
+    background:#f5f7fa; border-radius:6px; padding:7px 10px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .modal-timestamp span { font-weight:600; color:var(--text); }
+
+  .modal-actions { display:flex; gap:8px; }
+  .btn-confirm {
+    flex:1; padding:10px; border:none; border-radius:7px;
+    background:#1c2b3a; color:#fff; font-family:'DM Sans',sans-serif;
+    font-size:13px; font-weight:700; cursor:pointer; transition:background .15s;
+  }
+  .btn-confirm:hover { background:#2c3e50; }
+  .btn-mark-na {
+    padding:10px 14px; border:1.5px solid var(--na-border); border-radius:7px;
+    background:var(--na-bg); color:var(--na-text); font-family:'DM Sans',sans-serif;
+    font-size:12px; font-weight:700; cursor:pointer; transition:all .15s;
+  }
+  .btn-mark-na:hover { background:#feddba; }
+  .btn-cancel {
+    padding:10px 14px; border:1.5px solid var(--border); border-radius:7px;
+    background:#fff; color:var(--muted); font-family:'DM Sans',sans-serif;
+    font-size:12px; font-weight:600; cursor:pointer; transition:all .15s;
+  }
+  .btn-cancel:hover { background:#f0f4f8; }
+
+  .modal-existing {
+    background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px;
+    padding:10px 12px; margin-bottom:16px; font-size:12px; color:#166534;
+  }
+  .modal-existing strong { display:block; font-size:13px; margin-bottom:2px; }
+
+  /* ── SUNDAY CATCHUP OVERLAY ── */
+  .sunday-overlay {
+    display:none; position:fixed; inset:0;
+    background:#0f1b2d;
+    z-index:2000; flex-direction:column;
+    overflow-y:auto;
+  }
+  .sunday-overlay.open { display:flex; }
+
+  .sun-header {
+    position:sticky; top:0; z-index:10;
+    background:#0f1b2d;
+    border-bottom:1px solid rgba(255,255,255,.1);
+    padding:16px 28px;
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  .sun-title {
+    font-family:'DM Serif Display',serif;
+    font-size:22px; color:#fef9c3; letter-spacing:.01em; flex:1;
+  }
+  .sun-subtitle { font-size:12px; color:rgba(255,255,255,.5); margin-top:2px; }
+  .sun-stats {
+    display:flex; gap:20px; align-items:center; flex-wrap:wrap;
+  }
+  .sun-stat {
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .sun-stat-num  { font-size:26px; font-weight:800; line-height:1; }
+  .sun-stat-num.outstanding { color:#f87171; }
+  .sun-stat-num.done        { color:#4ade80; }
+  .sun-stat-num.na          { color:#fb923c; }
+  .sun-stat-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:rgba(255,255,255,.45); margin-top:2px; }
+
+  .sun-prog-bar-outer { flex:1; min-width:160px; height:8px; background:rgba(255,255,255,.1); border-radius:99px; overflow:hidden; }
+  .sun-prog-bar-inner { height:100%; background:linear-gradient(90deg,#f59e0b,#4ade80); border-radius:99px; transition:width .4s ease; }
+
+  .sun-close {
+    padding:8px 18px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:700;
+    border:1.5px solid rgba(255,255,255,.25); border-radius:8px;
+    background:transparent; color:rgba(255,255,255,.7); cursor:pointer; transition:all .15s;
+  }
+  .sun-close:hover { background:rgba(255,255,255,.1); color:#fff; }
+
+  .sun-body { padding:24px 28px 48px; flex:1; }
+
+  /* floor section inside sunday view */
+  .sun-floor-section { margin-bottom:36px; }
+  .sun-floor-label {
+    font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.1em;
+    padding:5px 14px; border-radius:20px; display:inline-block; margin-bottom:16px;
+  }
+  .sun-floor-label.down { background:rgba(27,79,114,.6); color:#93c5fd; border:1px solid rgba(147,197,253,.3); }
+  .sun-floor-label.up   { background:rgba(91,44,138,.6); color:#c4b5fd; border:1px solid rgba(196,181,253,.3); }
+
+  .sun-floor-all-done {
+    text-align:center; padding:28px; color:#4ade80;
+    font-size:18px; font-weight:700; letter-spacing:.02em;
+    background:rgba(74,222,128,.06); border-radius:12px;
+    border:1.5px dashed rgba(74,222,128,.3);
+  }
+
+  /* day group in catchup view */
+  .sun-day-group { margin-bottom:20px; }
+  .sun-day-name {
+    font-family:'DM Serif Display',serif; font-size:14px; color:rgba(255,255,255,.45);
+    margin-bottom:8px; padding-left:2px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .sun-day-name::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.08); }
+
+  .sun-beds-wrap { display:flex; flex-wrap:wrap; gap:8px; }
+
+  /* Outstanding bed chip (large, urgent) */
+  .sun-bed {
+    display:inline-flex; flex-direction:column; align-items:center;
+    padding:10px 12px 8px; border-radius:10px;
+    cursor:pointer; border:2px solid; transition:all .15s;
+    user-select:none; position:relative; min-width:64px;
+  }
+  .sun-bed-code  { font-size:14px; font-weight:800; letter-spacing:.02em; line-height:1; }
+  .sun-bed-shift { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; opacity:.7; margin-top:3px; }
+  .sun-bed-stamp { font-size:9px; opacity:.7; margin-top:3px; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* outstanding = bright + pulsing border */
+  .sun-bed.outstanding {
+    background:rgba(248,113,113,.12); color:#fca5a5;
+    border-color:#f87171;
+    animation:urgentPulse 2.5s ease-in-out infinite;
+  }
+  .sun-bed.outstanding:hover { background:rgba(248,113,113,.25); transform:scale(1.04); }
+  @keyframes urgentPulse {
+    0%,100% { box-shadow:0 0 0 0 rgba(248,113,113,0); }
+    50%      { box-shadow:0 0 0 5px rgba(248,113,113,.2); }
+  }
+
+  /* done = faded green */
+  .sun-bed.done {
+    background:rgba(74,222,128,.07); color:rgba(74,222,128,.5);
+    border-color:rgba(74,222,128,.2); opacity:.55;
+    animation:none;
+  }
+  .sun-bed.done::after {
+    content:'✓'; position:absolute; top:-5px; right:-5px;
+    font-size:9px; background:#059669; color:#fff;
+    border-radius:50%; width:14px; height:14px;
+    display:flex; align-items:center; justify-content:center; line-height:1;
+  }
+
+  /* na = faded amber */
+  .sun-bed.na {
+    background:rgba(251,146,60,.07); color:rgba(251,146,60,.5);
+    border-color:rgba(251,146,60,.2); opacity:.55; animation:none;
+  }
+
+  @media print {
+    body { padding:8px; background:#fff; }
+    .week-bar,.tabs,.toolbar,.hint,.modal-overlay,.sunday-overlay { display:none!important; }
+    .floor-panel { display:block!important; }
+    .bed { cursor:default; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>RN/EN Weekly Progress Notes</h1>
+  <p>Both Floors &nbsp;·&nbsp; Click any bed to record completion with staff name &amp; timestamp</p>
+  <div id="sp-status" style="display:none;margin:10px auto 0;max-width:500px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;border:1.5px solid rgba(0,0,0,.08);transition:all .3s;"></div>
+</div>
+
+<!-- Week navigator -->
+<div class="week-bar">
+  <div class="week-nav">
+    <button onclick="changeWeek(-1)">&#8592;</button>
+    <span class="week-label" id="week-label">Loading…</span>
+    <button onclick="changeWeek(1)">&#8594;</button>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="progress-wrap">
+  <div class="progress-floors">
+    <div class="pf-item">
+      <span class="pf-label down">Ground Floor</span>
+      <span class="pf-nums" id="prog-down-done">0</span>
+      <span class="pf-of"   id="prog-down-of">of 0</span>
+    </div>
+    <div class="pf-item">
+      <span class="pf-label up">Upper Floor</span>
+      <span class="pf-nums" id="prog-up-done">0</span>
+      <span class="pf-of"   id="prog-up-of">of 0</span>
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="pb-label">Overall this week</div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="prog-bar" style="width:0%"></div></div>
+  </div>
+  <div class="progress-pct" id="prog-pct">0%</div>
+</div>
+
+<!-- Floor tabs -->
+<div class="tabs">
+  <button class="tab-btn active down" id="tab-down" onclick="switchFloor('down')">
+    🏠 Ground Floor &nbsp;<span class="tab-pill" id="pill-down">101–151</span>
+  </button>
+  <button class="tab-btn up" id="tab-up" onclick="switchFloor('up')">
+    🏢 Upper Floor &nbsp;<span class="tab-pill" id="pill-up">201–258</span>
+  </button>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="shift-legend">
+    <span class="sl-item sl-am">AM</span>
+    <span class="sl-item sl-pm">PM</span>
+    <span class="sl-item sl-nd">ND</span>
+    <span class="sl-item sl-done">✓ Done</span>
+    <span class="sl-item sl-na">Vacant/N/A</span>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn-reset"   onclick="resetWeek()">Reset This Week</button>
+  <button class="btn-sunday"  onclick="openSunday()">☀ Sunday Catch-up</button>
+  <button class="btn-csv"     onclick="exportCSV()">⬇ Export CSV</button>
+  <button class="btn-print"   onclick="window.print()">🖨 Print / PDF</button>
+</div>
+
+<p class="hint">Click a bed → enter your name → mark complete &nbsp;·&nbsp; Right-click = Vacant/N/A (no name needed)</p>
+
+<!-- Floor panels -->
+<div class="floor-panel active" id="panel-down"><div class="days-wrap" id="days-down"></div></div>
+<div class="floor-panel"        id="panel-up">  <div class="days-wrap" id="days-up"></div>  </div>
+
+<!-- ── SUNDAY CATCH-UP OVERLAY ── -->
+<div class="sunday-overlay" id="sunday-overlay">
+
+  <div class="sun-header">
+    <div>
+      <div class="sun-title">☀ Sunday Catch-up View</div>
+      <div class="sun-subtitle" id="sun-week-label">Week of …</div>
+    </div>
+    <div class="sun-stats">
+      <div class="sun-stat"><span class="sun-stat-num outstanding" id="sun-outstanding">0</span><span class="sun-stat-label">Outstanding</span></div>
+      <div class="sun-stat"><span class="sun-stat-num done"        id="sun-done">0</span>       <span class="sun-stat-label">Completed</span></div>
+      <div class="sun-stat"><span class="sun-stat-num na"          id="sun-na">0</span>         <span class="sun-stat-label">Vacant/N/A</span></div>
+    </div>
+    <div class="sun-prog-bar-outer"><div class="sun-prog-bar-inner" id="sun-prog-bar" style="width:0%"></div></div>
+    <button class="sun-close" onclick="closeSunday()">✕ Close</button>
+  </div>
+
+  <div class="sun-body" id="sun-body"></div>
+</div>
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-bed-label">Recording note for</div>
+    <div class="modal-bed-code"  id="modal-bed-code">—</div>
+    <div class="modal-shift-badge" id="modal-shift-badge">AM</div>
+
+    <!-- shown if already completed -->
+    <div class="modal-existing" id="modal-existing" style="display:none">
+      <strong id="modal-existing-name"></strong>
+      <span   id="modal-existing-time"></span>
+      <div style="margin-top:4px;font-size:11px;color:#166534;">Click "Mark Complete" to update, or Cancel to keep as-is.</div>
+    </div>
+
+    <label for="staff-input">Staff Name</label>
+    <input id="staff-input" type="text" placeholder="Enter your name…" autocomplete="off"
+           onkeydown="if(event.key==='Enter')confirmDone()">
+
+    <div class="modal-timestamp">
+      🕐 <span id="modal-time">—</span>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-confirm"  onclick="confirmDone()">✓ Mark Complete</button>
+      <button class="btn-mark-na"  onclick="confirmNA()">Vacant/N/A</button>
+      <button class="btn-cancel"   onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SCHEDULES ─────────────────────────────────────────────────────────────────
+const SCHEDULE_DOWN = [
+  { day:'Monday',    am:['130B','131A','132A','133A'], pm:['133B','134A','135A','135B'], nd:['136A','136B','137A'] },
+  { day:'Tuesday',   am:['137B','138A','139A','129A'], pm:['129B','140A','141A','142A'], nd:['143A','144A','145A'] },
+  { day:'Wednesday', am:['146A','147A','148A','148B'], pm:['149A','149B','150A','150B'], nd:['151A','151B','101A'] },
+  { day:'Thursday',  am:['101B','102A','102B','103A'], pm:['103B','104A','105A','106A'], nd:['107A','108A','109A'] },
+  { day:'Friday',    am:['110A','111A','112A','113A'], pm:['114A','115A','116A','117A'], nd:['118A','119A','120A'] },
+  { day:'Saturday',  am:['121A','122A','123A','124A'], pm:['125A','126A','126B','127A'], nd:['127B','128A','128B'] },
+  { day:'Sunday',    am:['130A'], pm:[], nd:[], catchup:true }
+];
+const SCHEDULE_UP = [
+  { day:'Monday',    am:['201B','202B','203A','203B'], pm:['204A','205A','206A','207A'], nd:['208A','209A','210A'] },
+  { day:'Tuesday',   am:['211A','212A','213A','214A'], pm:['215A','216A','217A','218A'], nd:['219A','220A','221A'] },
+  { day:'Wednesday', am:['222A','223A','224A','225A'], pm:['226A','226B','227A','227B'], nd:['228A','228B','229A'] },
+  { day:'Thursday',  am:['229B','230A','230B','231A'], pm:['231B','232A','232B','233A'], nd:['233B','234A','235A'] },
+  { day:'Friday',    am:['235B','236A','236B','237A'], pm:['237B','238A','238B','239A'], nd:['240A','241A','242A'] },
+  { day:'Saturday',  am:['243A','243B','244A','245A'], pm:['246A','247A','248A','249A'], nd:['250A','251A','252A'] },
+  { day:'Sunday',    am:['253A','254A','255A','255B'], pm:['256A','256B','257A','257B'], nd:['258A','201A'], catchup:true }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let weekOffset = 0;
+let activeFloor = 'down';
+let bedState = {};
+// bedState[sk] = { status:'done'|'na', staff:'Name', time:'DD Mon HH:MM' }
+
+// Modal context
+let modalCtx = null; // { floorId, bedId, wk, di, shift }
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function getMonday(offset) {
+  const d = new Date();
+  const day = d.getDay();
+  d.setDate(d.getDate() + (day===0 ? -6 : 1-day) + offset*7);
+  d.setHours(0,0,0,0); return d;
+}
+function weekKey(offset) {
+  const m = getMonday(offset);
+  return `w${m.getFullYear()}${String(m.getMonth()+1).padStart(2,'0')}${String(m.getDate()).padStart(2,'0')}`;
+}
+function formatWeekLabel(offset) {
+  const mon = getMonday(offset);
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  const fmt = d => d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+  const tag = offset===0?' (This Week)':offset===-1?' (Last Week)':offset===1?' (Next Week)':'';
+  return `${fmt(mon)} – ${fmt(sun)}${tag}`;
+}
+function stateKey(floorId, bedId, wk, di, shift) { return `${floorId}_${bedId}_${wk}_d${di}_${shift}`; }
+function shiftOf(dayData, bedId) {
+  if (dayData.am.includes(bedId)) return 'am';
+  if (dayData.pm.includes(bedId)) return 'pm';
+  return 'nd';
+}
+function nowStamp() {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mo = d.toLocaleString('en-AU',{month:'short'});
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `${dd} ${mo} ${hh}:${mm}`;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  const wk = weekKey(weekOffset);
+  document.getElementById('week-label').textContent = formatWeekLabel(weekOffset);
+  renderFloor('down', SCHEDULE_DOWN, wk);
+  renderFloor('up',   SCHEDULE_UP,   wk);
+  updateProgress(wk);
+}
+
+function renderFloor(floorId, schedule, wk) {
+  const wrap = document.getElementById(`days-${floorId}`);
+  wrap.innerHTML = '';
+
+  schedule.forEach((dayData, di) => {
+    const card = document.createElement('div');
+    card.className = 'day-card';
+
+    const allBeds = [...dayData.am, ...dayData.pm, ...dayData.nd];
+    const doneCount = allBeds.filter(b => {
+      const e = bedState[stateKey(floorId, b, wk, di, shiftOf(dayData,b))];
+      return e && e.status === 'done';
+    }).length;
+    const isSunday = !!dayData.catchup;
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = `day-header${isSunday?' sunday':''}`;
+    hdr.innerHTML = `
+      <span class="day-name">${dayData.day}</span>
+      <span class="day-meta">${allBeds.length} bed${allBeds.length!==1?'s':''}</span>
+      <span class="day-prog">${doneCount} / ${allBeds.length} done</span>
+    `;
+    card.appendChild(hdr);
+
+    // Shifts
+    const shiftsRow = document.createElement('div');
+    shiftsRow.className = 'shifts-row';
+
+    ['am','pm','nd'].forEach(shift => {
+      const col = document.createElement('div');
+      col.className = 'shift-col';
+      const shiftBeds = dayData[shift];
+      const shiftDone = shiftBeds.filter(b => {
+        const e = bedState[stateKey(floorId,b,wk,di,shift)];
+        return e && e.status==='done';
+      }).length;
+      col.innerHTML = `
+        <div class="shift-header ${shift}">
+          <span>${shift.toUpperCase()}</span>
+          <span class="shift-count">${shiftDone}/${shiftBeds.length}</span>
+        </div>
+        <div class="beds-wrap" id="beds-${floorId}-${di}-${shift}"></div>
+      `;
+      shiftsRow.appendChild(col);
+    });
+    card.appendChild(shiftsRow);
+
+    if (isSunday) {
+      const note = document.createElement('div');
+      note.className = 'catchup-note';
+      note.textContent = floorId==='down'
+        ? '📋 Sunday — 130A + catch-up for any outstanding Ground Floor notes.'
+        : '📋 Sunday — Remaining beds + catch-up for any outstanding Upper Floor notes.';
+      card.appendChild(note);
+    }
+
+    wrap.appendChild(card);
+
+    // Chips
+    ['am','pm','nd'].forEach(shift => {
+      const bedsEl = document.getElementById(`beds-${floorId}-${di}-${shift}`);
+      if (!bedsEl) return;
+      dayData[shift].forEach(bedId => {
+        const sk = stateKey(floorId, bedId, wk, di, shift);
+        const entry = bedState[sk] || null;
+        const status = entry ? entry.status : 'pending';
+
+        const chip = document.createElement('div');
+        chip.className = `bed ${shift} state-${status}`;
+
+        // Code label
+        const codeEl = document.createElement('span');
+        codeEl.className = 'bed-code';
+        codeEl.textContent = bedId;
+        chip.appendChild(codeEl);
+
+        // Stamp (staff + time) if done or na
+        const stampEl = document.createElement('span');
+        stampEl.className = 'bed-stamp';
+        if (entry && entry.status === 'done' && entry.staff) {
+          stampEl.textContent = `${entry.staff}`;
+          chip.title = `${bedId} · Completed by ${entry.staff} at ${entry.time}`;
+        } else if (entry && entry.status === 'done') {
+          stampEl.textContent = entry.time || '';
+          chip.title = `${bedId} · Completed ${entry.time}`;
+        } else if (entry && entry.status === 'na') {
+          stampEl.textContent = 'Vacant/N/A';
+          chip.title = `${bedId} · Marked Vacant/N/A`;
+        } else {
+          chip.title = `${bedId} (${shift.toUpperCase()}) — click to record`;
+        }
+        chip.appendChild(stampEl);
+
+        // Click = open modal
+        chip.addEventListener('click', () => openModal(floorId, bedId, wk, di, shift));
+        // Right-click = quick NA (no modal)
+        chip.addEventListener('contextmenu', e => {
+          e.preventDefault();
+          quickNA(floorId, bedId, wk, di, shift);
+        });
+
+        bedsEl.appendChild(chip);
+      });
+    });
+  });
+}
+
+function updateProgress(wk) {
+  const calcFloor = (floorId, schedule) => {
+    const keys = schedule.flatMap((d, di) =>
+      ['am','pm','nd'].flatMap(sh => d[sh].map(b => stateKey(floorId,b,wk,di,sh)))
+    );
+    const total = keys.length;
+    const done  = keys.filter(k => bedState[k] && bedState[k].status==='done').length;
+    return { total, done };
+  };
+  const down = calcFloor('down', SCHEDULE_DOWN);
+  const up   = calcFloor('up',   SCHEDULE_UP);
+  const total = down.total + up.total;
+  const done  = down.done  + up.done;
+  const pct   = total ? Math.round((done/total)*100) : 0;
+
+  document.getElementById('prog-down-done').textContent = down.done;
+  document.getElementById('prog-down-of').textContent   = `of ${down.total}`;
+  document.getElementById('prog-up-done').textContent   = up.done;
+  document.getElementById('prog-up-of').textContent     = `of ${up.total}`;
+  document.getElementById('prog-bar').style.width       = pct+'%';
+  document.getElementById('prog-pct').textContent       = pct+'%';
+  document.getElementById('pill-down').textContent = `${down.done}/${down.total}`;
+  document.getElementById('pill-up').textContent   = `${up.done}/${up.total}`;
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(floorId, bedId, wk, di, shift) {
+  modalCtx = { floorId, bedId, wk, di, shift };
+
+  document.getElementById('modal-bed-code').textContent = bedId;
+
+  const badge = document.getElementById('modal-shift-badge');
+  badge.textContent = shift.toUpperCase();
+  badge.className = `modal-shift-badge ${shift}`;
+
+  // Time display
+  document.getElementById('modal-time').textContent = nowStamp();
+
+  // Pre-fill existing
+  const sk = stateKey(floorId, bedId, wk, di, shift);
+  const existing = bedState[sk];
+  const existingBox = document.getElementById('modal-existing');
+  const input = document.getElementById('staff-input');
+
+  if (existing && existing.status === 'done') {
+    existingBox.style.display = 'block';
+    document.getElementById('modal-existing-name').textContent = `✓ Already completed by ${existing.staff || 'unknown'}`;
+    document.getElementById('modal-existing-time').textContent = existing.time || '';
+    input.value = existing.staff || '';
+  } else {
+    existingBox.style.display = 'none';
+    input.value = loadStaffName();
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => input.focus(), 80);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  modalCtx = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function confirmDone() {
+  if (!modalCtx) return;
+  const staffName = document.getElementById('staff-input').value.trim();
+  if (!staffName) {
+    document.getElementById('staff-input').style.borderColor = '#f87171';
+    document.getElementById('staff-input').placeholder = 'Please enter your name!';
+    document.getElementById('staff-input').focus();
+    setTimeout(() => { document.getElementById('staff-input').style.borderColor = ''; }, 1500);
+    return;
+  }
+  saveStaffName(staffName);
+  const { floorId, bedId, wk, di, shift } = modalCtx;
+  const sk = stateKey(floorId, bedId, wk, di, shift);
+  bedState[sk] = { status:'done', staff:staffName, time:nowStamp() };
+  saveBed(sk, bedState[sk]); closeModal(); render();
+}
+
+function confirmNA() {
+  if (!modalCtx) return;
+  const { floorId, bedId, wk, di, shift } = modalCtx;
+  const sk = stateKey(floorId, bedId, wk, di, shift);
+  if (bedState[sk] && bedState[sk].status === 'na') {
+    delete bedState[sk];
+  } else {
+    bedState[sk] = { status:'na', staff:'', time:nowStamp() };
+  }
+  saveBed(sk, bedState[sk]||null); closeModal(); render();
+}
+
+function quickNA(floorId, bedId, wk, di, shift) {
+  const sk = stateKey(floorId, bedId, wk, di, shift);
+  if (bedState[sk] && bedState[sk].status === 'na') {
+    delete bedState[sk];
+  } else {
+    bedState[sk] = { status:'na', staff:'', time:nowStamp() };
+  }
+  saveBed(sk, bedState[sk]||null); render();
+}
+
+// ── FLOOR / WEEK CONTROL ──────────────────────────────────────────────────────
+function switchFloor(floorId) {
+  activeFloor = floorId;
+  document.getElementById('panel-down').classList.toggle('active', floorId==='down');
+  document.getElementById('panel-up').classList.toggle('active',   floorId==='up');
+  document.getElementById('tab-down').classList.toggle('active', floorId==='down');
+  document.getElementById('tab-up').classList.toggle('active',   floorId==='up');
+}
+
+function changeWeek(delta) { weekOffset += delta; render(); }
+
+function resetWeek() {
+  if (!confirm('Reset all completions for this week (both floors)?')) return;
+  const wk = weekKey(weekOffset);
+  Object.keys(bedState).forEach(k => { if (k.includes(`_${wk}_`)) delete bedState[k]; });
+  saveState(); render();
+}
+
+// ── SUNDAY CATCH-UP VIEW ──────────────────────────────────────────────────────
+function openSunday() {
+  renderSunday();
+  document.getElementById('sunday-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSunday() {
+  document.getElementById('sunday-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderSunday() {
+  const wk  = weekKey(weekOffset);
+  document.getElementById('sun-week-label').textContent = formatWeekLabel(weekOffset);
+
+  const FLOORS = [
+    { id:'down', label:'Ground Floor', cls:'down', schedule: SCHEDULE_DOWN },
+    { id:'up',   label:'Upper Floor',  cls:'up',   schedule: SCHEDULE_UP   }
+  ];
+
+  let totalOutstanding = 0, totalDone = 0, totalNA = 0, totalAll = 0;
+
+  const body = document.getElementById('sun-body');
+  body.innerHTML = '';
+
+  FLOORS.forEach(({ id:floorId, label:floorLabel, cls, schedule }) => {
+    const section = document.createElement('div');
+    section.className = 'sun-floor-section';
+
+    const floorBadge = document.createElement('div');
+    floorBadge.className = `sun-floor-label ${cls}`;
+    floorBadge.textContent = floorLabel;
+    section.appendChild(floorBadge);
+
+    // Collect all beds grouped by day, with their status
+    let floorHasOutstanding = false;
+    const dayGroups = [];
+
+    schedule.forEach((dayData, di) => {
+      const beds = [];
+      ['am','pm','nd'].forEach(shift => {
+        dayData[shift].forEach(bedId => {
+          const sk    = stateKey(floorId, bedId, wk, di, shift);
+          const entry = bedState[sk] || null;
+          const status = entry ? entry.status : 'outstanding';
+          beds.push({ bedId, shift, status, staff: entry?.staff||'', time: entry?.time||'' });
+          totalAll++;
+          if (status === 'outstanding') { totalOutstanding++; floorHasOutstanding = true; }
+          else if (status === 'done') totalDone++;
+          else totalNA++;
+        });
+      });
+      if (beds.length) dayGroups.push({ day: dayData.day, di, beds });
+    });
+
+    if (!floorHasOutstanding) {
+      const allDone = document.createElement('div');
+      allDone.className = 'sun-floor-all-done';
+      allDone.innerHTML = `✅ All ${floorLabel} notes complete!`;
+      section.appendChild(allDone);
+    } else {
+      dayGroups.forEach(({ day, di, beds }) => {
+        // Only show days that have at least one outstanding OR show all with fading
+        const group = document.createElement('div');
+        group.className = 'sun-day-group';
+
+        const dayLabel = document.createElement('div');
+        dayLabel.className = 'sun-day-name';
+        dayLabel.textContent = day;
+        group.appendChild(dayLabel);
+
+        const bedsWrap = document.createElement('div');
+        bedsWrap.className = 'sun-beds-wrap';
+
+        beds.forEach(({ bedId, shift, status, staff, time }) => {
+          const chip = document.createElement('div');
+          chip.className = `sun-bed ${status}`;
+
+          const codeEl = document.createElement('div');
+          codeEl.className = 'sun-bed-code';
+          codeEl.textContent = bedId;
+
+          const shiftEl = document.createElement('div');
+          shiftEl.className = 'sun-bed-shift';
+          shiftEl.textContent = shift.toUpperCase();
+
+          const stampEl = document.createElement('div');
+          stampEl.className = 'sun-bed-stamp';
+          if (status === 'done' && staff) stampEl.textContent = staff;
+          else if (status === 'done' && time) stampEl.textContent = time;
+          else if (status === 'na') stampEl.textContent = 'Vacant/N/A';
+
+          chip.appendChild(codeEl);
+          chip.appendChild(shiftEl);
+          if (stampEl.textContent) chip.appendChild(stampEl);
+
+          // Clicking an outstanding bed opens the regular modal
+          if (status === 'outstanding') {
+            chip.title = `${bedId} — click to record completion`;
+            chip.addEventListener('click', () => {
+              closeSunday();
+              // Switch to correct floor tab first
+              switchFloor(floorId);
+              // Small delay to let floor render then open modal
+              setTimeout(() => openModal(floorId, bedId, wk, di, shift), 80);
+            });
+          } else {
+            chip.title = status === 'done'
+              ? `${bedId} — completed${staff ? ' by '+staff : ''}${time ? ' at '+time : ''}`
+              : `${bedId} — Vacant/N/A`;
+            // Allow clicking done/na beds to re-open modal for editing
+            chip.style.cursor = 'pointer';
+            chip.addEventListener('click', () => {
+              closeSunday();
+              switchFloor(floorId);
+              setTimeout(() => openModal(floorId, bedId, wk, di, shift), 80);
+            });
+          }
+
+          bedsWrap.appendChild(chip);
+        });
+
+        group.appendChild(bedsWrap);
+        section.appendChild(group);
+      });
+    }
+
+    body.appendChild(section);
+  });
+
+  // Update header stats
+  document.getElementById('sun-outstanding').textContent = totalOutstanding;
+  document.getElementById('sun-done').textContent        = totalDone;
+  document.getElementById('sun-na').textContent          = totalNA;
+  const pct = totalAll ? Math.round(((totalDone + totalNA) / totalAll) * 100) : 0;
+  document.getElementById('sun-prog-bar').style.width    = pct + '%';
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const wk = weekKey(weekOffset);
+  const weekLabel = formatWeekLabel(weekOffset);
+
+  const rows = [
+    ['Week', 'Floor', 'Day', 'Shift', 'Bed', 'Status', 'Staff Name', 'Date & Time']
+  ];
+
+  const FLOORS = [
+    { id: 'down', label: 'Ground Floor', schedule: SCHEDULE_DOWN },
+    { id: 'up',   label: 'Upper Floor',  schedule: SCHEDULE_UP   }
+  ];
+
+  FLOORS.forEach(({ id: floorId, label: floorLabel, schedule }) => {
+    schedule.forEach((dayData, di) => {
+      ['am', 'pm', 'nd'].forEach(shift => {
+        dayData[shift].forEach(bedId => {
+          const sk = stateKey(floorId, bedId, wk, di, shift);
+          const entry = bedState[sk];
+          const status = entry ? entry.status : 'Pending';
+          const staff  = entry && entry.staff ? entry.staff : '';
+          const time   = entry && entry.time  ? entry.time  : '';
+          const statusLabel = status === 'done' ? 'Complete' : status === 'na' ? 'Vacant/N/A' : 'Pending';
+          rows.push([weekLabel, floorLabel, dayData.day, shift.toUpperCase(), bedId, statusLabel, staff, time]);
+        });
+      });
+    });
+  });
+
+  // Build CSV string
+  const csv = rows.map(r =>
+    r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  ).join('\r\n');
+
+  // Trigger download
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const safeWeek = formatWeekLabel(weekOffset).replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+  a.href     = url;
+  a.download = `Progress_Notes_${safeWeek}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// ⚙️  FIREBASE CONFIG — loaded from browser storage after first setup
+// ══════════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  databaseURL: 'YOUR_DATABASE_URL',
+  apiKey:      'YOUR_API_KEY',
+  projectId:   'YOUR_PROJECT_ID'
+};
+(function(){
+  try{ const s=localStorage.getItem('fbConfig_weekly'); if(s){ const c=JSON.parse(s); Object.assign(FIREBASE_CONFIG,c); } }catch(e){}
+})();
+let FB_CONFIGURED_LIVE = FIREBASE_CONFIG.databaseURL !== 'YOUR_DATABASE_URL';
+const FB_PATH = 'weeklyProgressNotes';
+
+// ── LOCAL FALLBACK ────────────────────────────────────────────────
+const _mem = {};
+function storeSet(k,v){ try{localStorage.setItem(k,v);}catch(e){_mem[k]=v;} }
+function storeGet(k)  { try{const v=localStorage.getItem(k);if(v!==null)return v;}catch(e){} return _mem[k]||null; }
+function saveStaffName(n){ storeSet('lastStaffName',n); }
+function loadStaffName() { return storeGet('lastStaffName')||''; }
+function saveLocalFallback(){ try{storeSet('weeklyNotes_v4',JSON.stringify(bedState));}catch(e){} }
+function loadLocalFallback() { try{ const s=storeGet('weeklyNotes_v4'); if(s) bedState=JSON.parse(s); }catch(e){} }
+
+// ── STATUS BAR ────────────────────────────────────────────────────
+function setStatus(s,msg){
+  const bar=document.getElementById('sp-status'); if(!bar) return;
+  const colors={syncing:'#fef9c3',ok:'#d1fae5',error:'#ffeaea',setup:'#ede9fe'};
+  bar.innerHTML=msg||{syncing:'🔄 Syncing…',ok:'✅ Saved & synced',error:'⚠️ Sync error — saved locally',setup:'⚙️ Not connected — <a href="#" onclick="showSetup();return false;" style="color:#7c3aed;font-weight:700;">click here to set up real-time sync</a>'}[s]||'';
+  bar.style.background=colors[s]||'#fff'; bar.style.display='block';
+  if(s==='ok') setTimeout(()=>{ bar.style.display='none'; },2500);
+}
+
+// ── FIREBASE REST ─────────────────────────────────────────────────
+function fbUrl(p){ return `${FIREBASE_CONFIG.databaseURL}/${FB_PATH}/${p}.json?auth=${FIREBASE_CONFIG.apiKey}`; }
+async function fbSet(p,data){ await fetch(fbUrl(p),{method:'PUT',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}}); }
+async function fbDelete(p)  { await fetch(fbUrl(p),{method:'DELETE'}); }
+async function fbGetAll()   { const r=await fetch(fbUrl('')); if(!r.ok) throw new Error(r.status); return await r.json(); }
+
+// ── REAL-TIME LISTENER ────────────────────────────────────────────
+let sseSource=null;
+function startListening(){
+  if(!FB_CONFIGURED_LIVE) return;
+  if(sseSource) sseSource.close();
+  sseSource=new EventSource(`${FIREBASE_CONFIG.databaseURL}/${FB_PATH}.json?auth=${FIREBASE_CONFIG.apiKey}`);
+  sseSource.addEventListener('put',e=>{
+    try{
+      const msg=JSON.parse(e.data);
+      bedState = msg.data || {};
+      render();
+    }catch(err){}
+  });
+  sseSource.addEventListener('patch',e=>{
+    try{
+      const msg=JSON.parse(e.data);
+      Object.assign(bedState, msg.data||{});
+      // Remove deleted keys (null values)
+      Object.keys(msg.data||{}).forEach(k=>{ if(msg.data[k]===null) delete bedState[k]; });
+      render();
+    }catch(err){}
+  });
+  sseSource.onerror=()=>{ setTimeout(startListening,5000); };
+}
+
+// ── LOAD & SAVE ───────────────────────────────────────────────────
+async function loadAll(){
+  if(!FB_CONFIGURED_LIVE){ loadLocalFallback(); render(); return; }
+  try{
+    setStatus('syncing');
+    const data=await fbGetAll();
+    bedState = data||{};
+    render(); setStatus('ok');
+  }catch(e){ setStatus('error'); loadLocalFallback(); render(); }
+}
+
+async function saveBed(sk, entry){
+  if(!FB_CONFIGURED_LIVE){ saveLocalFallback(); if(document.getElementById('sunday-overlay').classList.contains('open')) renderSunday(); return; }
+  try{
+    setStatus('syncing');
+    if(entry){ await fbSet(sk.replace(/\//g,'_'), entry); }
+    else      { await fbDelete(sk.replace(/\//g,'_')); }
+    setStatus('ok');
+  }catch(e){ setStatus('error'); saveLocalFallback(); }
+  if(document.getElementById('sunday-overlay').classList.contains('open')) renderSunday();
+}
+
+function saveState(){ if(!FB_CONFIGURED_LIVE){ saveLocalFallback(); } else { loadAll(); } if(document.getElementById('sunday-overlay').classList.contains('open')) renderSunday(); }
+
+// ── SETUP SCREEN ──────────────────────────────────────────────────
+function showSetup(){
+  try{ const s=localStorage.getItem('fbConfig_weekly'); if(s){ const c=JSON.parse(s); document.getElementById('setup-db-url').value=c.databaseURL||''; document.getElementById('setup-api-key').value=c.apiKey||''; document.getElementById('setup-project-id').value=c.projectId||''; } }catch(e){}
+  document.getElementById('setup-overlay').style.display='flex';
+}
+function closeSetup(){ document.getElementById('setup-overlay').style.display='none'; }
+function applySetup(){
+  const dbUrl=document.getElementById('setup-db-url').value.trim().replace(/\/$/,'');
+  const apiKey=document.getElementById('setup-api-key').value.trim();
+  const projId=document.getElementById('setup-project-id').value.trim();
+  const err=document.getElementById('setup-error');
+  if(!dbUrl||!apiKey||!projId){ err.textContent='Please fill in all 3 fields.'; err.style.display='block'; return; }
+  if(!dbUrl.startsWith('https://')){ err.textContent='Database URL should start with https://'; err.style.display='block'; return; }
+  err.style.display='none';
+  try{ localStorage.setItem('fbConfig_weekly',JSON.stringify({databaseURL:dbUrl,apiKey,projectId:projId})); }catch(e){}
+  FIREBASE_CONFIG.databaseURL=dbUrl; FIREBASE_CONFIG.apiKey=apiKey; FIREBASE_CONFIG.projectId=projId;
+  FB_CONFIGURED_LIVE=true;
+  closeSetup(); setStatus('syncing'); loadAll(); startListening();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+if(!FB_CONFIGURED_LIVE){
+  loadLocalFallback(); render(); setStatus('setup');
+} else {
+  loadAll(); startListening();
+}
+</script>
+
+<!-- ── FIREBASE SETUP OVERLAY ── -->
+<div id="setup-overlay" style="display:none;position:fixed;inset:0;background:rgba(15,27,45,.92);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;padding:36px 36px 28px;max-width:560px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.35);font-family:'DM Sans',sans-serif;">
+    <div style="font-size:32px;margin-bottom:8px;">🔥</div>
+    <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:#1c2b3a;margin-bottom:6px;">Set Up Real-Time Sync</h2>
+    <p style="font-size:13px;color:#7a8fa6;margin-bottom:24px;line-height:1.6;">Follow these steps to connect your free Firebase database. Once done, all staff share data in real time from any device.</p>
+    <div style="background:#f5f7fa;border-radius:10px;padding:18px 20px;margin-bottom:20px;font-size:13px;line-height:1.9;color:#1c2b3a;">
+      <strong>Step 1</strong> — Go to <a href="https://firebase.google.com" target="_blank" style="color:#1a6fa8;">firebase.google.com</a> → sign in with any Google account<br>
+      <strong>Step 2</strong> — <em>Go to console</em> → <em>Add project</em> → name it anything → click through<br>
+      <strong>Step 3</strong> — Click <em>Realtime Database</em> → <em>Create Database</em> → pick any location → <strong>Start in test mode</strong><br>
+      <strong>Step 4</strong> — Click ⚙️ gear → <em>Project settings</em> → scroll to <em>Your apps</em> → click <strong>&lt;/&gt;</strong> (Web) → register → copy the 3 values below
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7a8fa6;display:block;margin-bottom:5px;">Database URL</label>
+      <input id="setup-db-url" type="text" placeholder="https://your-app-default-rtdb.firebaseio.com" style="width:100%;padding:9px 12px;border:1.5px solid #dde3ec;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7a8fa6;display:block;margin-bottom:5px;">API Key</label>
+      <input id="setup-api-key" type="text" placeholder="AIzaSy..." style="width:100%;padding:9px 12px;border:1.5px solid #dde3ec;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;">
+    </div>
+    <div style="margin-bottom:22px;">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7a8fa6;display:block;margin-bottom:5px;">Project ID</label>
+      <input id="setup-project-id" type="text" placeholder="your-app-12345" style="width:100%;padding:9px 12px;border:1.5px solid #dde3ec;border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;">
+    </div>
+    <div id="setup-error" style="display:none;background:#ffeaea;border:1.5px solid #f5a0a0;border-radius:7px;padding:9px 12px;font-size:12px;color:#c0392b;margin-bottom:14px;font-weight:600;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="applySetup()" style="flex:1;padding:11px;background:#1c2b3a;color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">✓ Connect &amp; Save</button>
+      <button onclick="closeSetup()" style="padding:11px 16px;background:#fff;color:#7a8fa6;border:1.5px solid #dde3ec;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+    </div>
+    <p style="font-size:11px;color:#7a8fa6;margin-top:14px;text-align:center;">Your config is saved in this browser. Repeat this step on each new device — takes 30 seconds.</p>
+  </div>
+</div>
+
+</body>
+</html>
