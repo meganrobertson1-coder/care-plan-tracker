@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Care Team Allocation Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#faf8f4;
+    --card:#ffffff;
+    --ink:#2b2620;
+    --muted:#7a7268;
+    --border:#e6e0d6;
+    --accent:#8a6d3b;
+    --emerald:#2f7a4f; --emerald-bg:#e7f4ec;
+    --topaz:#b8860b;   --topaz-bg:#fbf2dc;
+    --amethyst:#6b4e9c; --amethyst-bg:#f0eaf8;
+    --ruby:#a83250;    --ruby-bg:#fbe9ee;
+    --sapphire:#2b5fa8; --sapphire-bg:#e8f0fb;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:32px 20px 60px; background:var(--bg); color:var(--ink);
+    font-family:'DM Sans', sans-serif;
+    display:flex; justify-content:center;
+  }
+  .wrap{ width:100%; max-width:760px; }
+  h1{
+    font-family:'DM Serif Display', serif; font-weight:400;
+    font-size:32px; margin:0 0 4px;
+  }
+  .subtitle{ color:var(--muted); font-size:14px; margin:0 0 20px; line-height:1.5; }
+
+  .input-card{
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:20px 24px; margin-bottom:20px;
+    display:flex; gap:24px; flex-wrap:wrap;
+  }
+  .field{ flex:1; min-width:180px; }
+  .field label{ display:block; font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .field input{
+    width:100%; font-family:'DM Sans', sans-serif; font-size:20px; font-weight:700;
+    padding:10px 12px; border:1.5px solid var(--border); border-radius:10px;
+    background:#fffdf9; color:var(--ink);
+  }
+  .field input:focus{ outline:none; border-color:var(--accent); }
+
+  .meta-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:12px; flex-wrap:wrap; gap:8px;
+  }
+  .last-updated{ font-size:12px; color:var(--muted); }
+  .last-updated b{ color:var(--ink); font-weight:700; }
+
+  .pill-btn{
+    font-family:'DM Sans', sans-serif; font-weight:500; font-size:13px;
+    padding:8px 16px; border-radius:999px; border:1.5px solid var(--border);
+    background:var(--card); color:var(--ink); cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .pill-btn:hover{ border-color:var(--accent); }
+  .pill-btn.locked{ color:var(--muted); }
+  .pill-btn.save{ background:var(--emerald); color:#fff; border-color:var(--emerald); }
+
+  .lock-panel{
+    display:none; background:#fffdf9; border:1px solid var(--border); border-radius:14px;
+    padding:16px 18px; margin-bottom:20px; gap:12px; align-items:flex-end; flex-wrap:wrap;
+  }
+  .lock-panel.open{ display:flex; }
+  .lock-panel .field{ min-width:160px; flex:0 0 auto; }
+  .lock-panel .field input{ font-size:16px; font-weight:400; padding:9px 12px; }
+  .lock-error{ font-size:12px; color:var(--ruby); margin-top:6px; display:none; }
+  .lock-error.show{ display:block; }
+
+  .results{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+  @media (max-width:560px){ .results{ grid-template-columns:1fr; } }
+
+  .wing-card{
+    background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:16px 18px; position:relative; overflow:hidden;
+  }
+  .wing-card::before{
+    content:''; position:absolute; left:0; top:0; bottom:0; width:5px;
+  }
+  .wing-card.emerald::before{ background:var(--emerald); }
+  .wing-card.topaz::before{ background:var(--topaz); }
+  .wing-card.amethyst::before{ background:var(--amethyst); }
+  .wing-card.ruby::before{ background:var(--ruby); }
+  .wing-card.sapphire::before{ background:var(--sapphire); }
+
+  .wing-card.center-span{
+    grid-column: 1 / -1;
+  }
+
+  .wing-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+  .wing-name{ font-family:'DM Serif Display', serif; font-size:18px; }
+  .badge{
+    font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px;
+  }
+  .badge.emerald{ background:var(--emerald-bg); color:var(--emerald); }
+  .badge.topaz{ background:var(--topaz-bg); color:var(--topaz); }
+  .badge.amethyst{ background:var(--amethyst-bg); color:var(--amethyst); }
+  .badge.ruby{ background:var(--ruby-bg); color:var(--ruby); }
+  .badge.sapphire{ background:var(--sapphire-bg); color:var(--sapphire); }
+
+  .allocated{ font-size:36px; font-weight:700; line-height:1; margin-bottom:4px; }
+  .allocated span{ font-size:14px; font-weight:400; color:var(--muted); margin-left:4px; }
+  .wing-meta{ font-size:12px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+  .wing-meta input{
+    width:64px; font-family:'DM Sans'; font-size:12px; text-align:right;
+    border:1px solid var(--border); border-radius:6px; padding:3px 6px; color:var(--ink); background:#f3f0e9;
+  }
+  .wing-meta input:not(:disabled){ background:#fffdf9; border-color:var(--accent); }
+  .wing-meta input:disabled{ color:var(--muted); cursor:not-allowed; }
+
+  .footer-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 18px; background:var(--card); border:1px solid var(--border); border-radius:14px;
+    font-size:13px; color:var(--muted);
+  }
+  .footer-row .status{ font-weight:700; }
+  .status.ok{ color:var(--emerald); }
+  .status.warn{ color:var(--ruby); }
+  .note{ font-size:12px; color:var(--muted); margin-top:14px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Care team allocation calculator</h1>
+  <p class="subtitle">Enter the care team available for this shift. Allocation per wing is calculated from each wing's share of care minutes, with Amethyst always guaranteed its minimum.</p>
+
+  <div class="input-card">
+    <div class="field">
+      <label>Total team for this shift</label>
+      <input type="number" id="totalTeam" value="60" min="0">
+    </div>
+  </div>
+
+  <div class="meta-row">
+    <span class="last-updated">Care minutes last updated: <b id="lastUpdatedText">—</b></span>
+    <button class="pill-btn locked" id="editBtn">🔒 Edit care minutes</button>
+  </div>
+
+  <div class="lock-panel" id="lockPanel">
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="pwInput" placeholder="Enter password">
+    </div>
+    <button class="pill-btn" id="unlockBtn">Unlock</button>
+    <div class="lock-error" id="lockError">Incorrect password.</div>
+  </div>
+
+  <div class="results" id="results"></div>
+
+  <div class="footer-row">
+    <span>Total allocated vs team entered</span>
+    <span class="status" id="statusText">— / —</span>
+  </div>
+
+  <p class="note">Care minutes are locked to prevent accidental changes. Use "Edit care minutes" and enter the password to update a wing's figure — changes save for everyone and update the date above.</p>
+</div>
+
+<script>
+const DEFAULT_WINGS = [
+  { key:'emerald', name:'Emerald', minutes:3870 },
+  { key:'topaz', name:'Topaz', minutes:7308 },
+  { key:'amethyst', name:'Amethyst', minutes:3450 },
+  { key:'ruby', name:'Ruby', minutes:6320 },
+  { key:'sapphire', name:'Sapphire', minutes:8152 },
+];
+const DEFAULT_LAST_UPDATED = 'Mon, 17 Aug 2026';
+const AMETHYST_MIN = 2;
+const EDIT_PASSWORD = 'htcc';
+const STORAGE_KEY = 'care-minutes-data';
+
+let wings = DEFAULT_WINGS.map(w => ({...w}));
+let lastUpdated = DEFAULT_LAST_UPDATED;
+let unlocked = false;
+
+const resultsEl = document.getElementById('results');
+const totalTeamEl = document.getElementById('totalTeam');
+const statusEl = document.getElementById('statusText');
+const lastUpdatedEl = document.getElementById('lastUpdatedText');
+const editBtn = document.getElementById('editBtn');
+const lockPanel = document.getElementById('lockPanel');
+const pwInput = document.getElementById('pwInput');
+const unlockBtn = document.getElementById('unlockBtn');
+const lockError = document.getElementById('lockError');
+
+function formatToday() {
+  return new Date().toLocaleDateString('en-AU', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+}
+
+async function loadData() {
+  try {
+    const result = await window.storage.get(STORAGE_KEY, true);
+    if (result && result.value) {
+      const parsed = JSON.parse(result.value);
+      if (parsed.wings) wings = parsed.wings;
+      if (parsed.lastUpdated) lastUpdated = parsed.lastUpdated;
+    }
+  } catch (err) {
+    console.log('No saved care minutes yet, using defaults.');
+  }
+  lastUpdatedEl.textContent = lastUpdated;
+  calculate();
+}
+
+async function saveData() {
+  try {
+    await window.storage.set(STORAGE_KEY, JSON.stringify({ wings, lastUpdated }), true);
+  } catch (err) {
+    console.error('Could not save care minutes:', err);
+  }
+}
+
+const DISPLAY_ORDER = ['emerald', 'topaz', 'amethyst', 'sapphire', 'ruby'];
+
+function render() {
+  const ordered = DISPLAY_ORDER.map(key => wings.find(w => w.key === key));
+  resultsEl.innerHTML = ordered.map(w => `
+    <div class="wing-card ${w.key}${w.key === 'amethyst' ? ' center-span' : ''}">
+      <div class="wing-top">
+        <span class="wing-name">${w.name}</span>
+        <span class="badge ${w.key}">${w.sharePct}%</span>
+      </div>
+      <div class="allocated">${w.alloc}<span>allocated</span></div>
+      <div class="wing-meta">
+        <span>${w.key === 'amethyst' ? 'min applies' : 'care mins'}</span>
+        <input type="number" data-key="${w.key}" class="minutesInput" value="${w.minutes}" min="0" ${unlocked ? '' : 'disabled'}>
+      </div>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.minutesInput').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const key = e.target.dataset.key;
+      const wing = wings.find(w => w.key === key);
+      wing.minutes = Math.max(0, Number(e.target.value) || 0);
+      lastUpdated = formatToday();
+      lastUpdatedEl.textContent = lastUpdated;
+      calculate();
+      saveData();
+    });
+  });
+}
+
+function calculate() {
+  const total = Math.max(0, Number(totalTeamEl.value) || 0);
+  const totalMinutes = wings.reduce((s, w) => s + w.minutes, 0);
+  const amethyst = wings.find(w => w.key === 'amethyst');
+  const others = wings.filter(w => w.key !== 'amethyst');
+
+  wings.forEach(w => { w.sharePct = totalMinutes ? (w.minutes / totalMinutes * 100).toFixed(1) : '0.0'; });
+
+  const amyRaw = totalMinutes ? (amethyst.minutes / totalMinutes) * total : 0;
+  const amyAlloc = Math.max(Math.round(amyRaw), AMETHYST_MIN);
+  amethyst.alloc = Math.max(amyAlloc, 0);
+
+  let remainingTeam = total - amethyst.alloc;
+  const remainingMinutes = totalMinutes - amethyst.minutes;
+  if (remainingTeam < 0) remainingTeam = 0;
+
+  const raw = others.map(w => ({
+    key: w.key,
+    raw: remainingMinutes > 0 ? (w.minutes / remainingMinutes) * remainingTeam : 0,
+  }));
+  raw.forEach(r => { r.floor = Math.floor(r.raw); r.remainder = r.raw - r.floor; });
+
+  let floorSum = raw.reduce((s, r) => s + r.floor, 0);
+  let deficit = remainingTeam - floorSum;
+
+  const order = [...raw].sort((a, b) => b.remainder - a.remainder);
+  order.forEach((r, i) => { r.extra = i < deficit ? 1 : 0; });
+
+  others.forEach(w => {
+    const r = raw.find(x => x.key === w.key);
+    w.alloc = r.floor + r.extra;
+  });
+
+  render();
+
+  const totalAlloc = wings.reduce((s, w) => s + w.alloc, 0);
+  statusEl.textContent = `${totalAlloc} / ${total}`;
+  statusEl.className = 'status ' + (totalAlloc === total ? 'ok' : 'warn');
+}
+
+editBtn.addEventListener('click', () => {
+  if (unlocked) {
+    unlocked = false;
+    editBtn.innerHTML = '🔒 Edit care minutes';
+    editBtn.classList.add('locked');
+    lockPanel.classList.remove('open');
+    render();
+  } else {
+    lockPanel.classList.toggle('open');
+    pwInput.value = '';
+    lockError.classList.remove('show');
+    pwInput.focus();
+  }
+});
+
+unlockBtn.addEventListener('click', () => {
+  if (pwInput.value.trim().toLowerCase() === EDIT_PASSWORD) {
+    unlocked = true;
+    editBtn.innerHTML = '🔓 Lock care minutes';
+    editBtn.classList.remove('locked');
+    lockPanel.classList.remove('open');
+    lockError.classList.remove('show');
+    render();
+  } else {
+    lockError.classList.add('show');
+  }
+});
+
+pwInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') unlockBtn.click();
+});
+
+totalTeamEl.addEventListener('input', calculate);
+
+loadData();
+</script>
+</body>
+</html>
