@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hamlyn Terrace – Behaviour Support Plan Tracker</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root{
+  --bg:#f6f4f0;--card:#ffffff;--ink:#1f2933;--ink2:#52606d;--muted:#8a94a0;--line:#e4e0d8;
+  --accent:#2f5d62;--accent-soft:#e3eeee;
+  --done:#2e7d4f;--prog:#d08a1e;--todo:#b9bec6;--na:#e9e6e0;
+  --high:#b42318;--high-bg:#fdecea;--med:#b25e09;--med-bg:#fdf1e3;--low:#2563a8;--low-bg:#e7f0fa;
+  --topaz:#c08a12;--emerald:#2e7d4f;--amethyst:#7a4fa3;--ruby:#b42340;--sapphire:#2563a8;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Carlito,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+header h1{margin:0;font-size:24px;font-weight:700;letter-spacing:.2px}
+header .sub{color:var(--ink2);font-size:13px}
+.spacer{flex:1}
+.badge{font-size:13px;padding:4px 10px;border-radius:999px;background:#f0eee9;color:var(--ink2);white-space:nowrap}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:999px;cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--ink2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{color:var(--high);border-color:#f1c4bf}
+.btn.dark{background:#1f2933;color:#fff;border-color:#1f2933}
+main{max-width:1280px;margin:0 auto;padding:20px 22px 60px}
+
+/* summary */
+.summary{display:grid;grid-template-columns:minmax(300px,1.1fr) 1fr 1fr;gap:16px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.card h2{margin:0 0 4px;font-size:17px}
+.card .hint{color:var(--muted);font-size:13px;margin-bottom:10px}
+.pie-wrap{display:flex;align-items:center;gap:18px}
+.pie-wrap svg{flex:0 0 auto}
+.pie-wrap svg path{cursor:pointer;transition:opacity .15s}
+.pie-wrap svg path:hover{opacity:.85}
+.legend{list-style:none;margin:0;padding:0;font-size:14px;flex:1}
+.legend li{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line)}
+.legend li:last-child{border-bottom:0}
+.sw{width:12px;height:12px;border-radius:3px;flex:0 0 auto}
+.legend .v{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.bigpct{font-size:34px;font-weight:700;line-height:1}
+.bigpct small{font-size:14px;font-weight:400;color:var(--ink2)}
+.mini{width:100%;border-collapse:collapse;font-size:14px}
+.mini td,.mini th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+.mini th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+.mini td.n{text-align:right;font-variant-numeric:tabular-nums}
+.bar{height:8px;background:#efece6;border-radius:4px;overflow:hidden;min-width:60px}
+.bar span{display:block;height:100%;background:var(--done);border-radius:4px}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+
+/* filters */
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:4px 0 16px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{border:1px solid var(--line);background:var(--card);padding:6px 13px;border-radius:999px;cursor:pointer;font-weight:600;color:var(--ink2)}
+.pill.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.filters select,.filters input{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px}
+.filters input{min-width:200px}
+.count{color:var(--muted);font-size:13px;margin-left:auto}
+
+/* wing tables */
+.wing{margin-bottom:18px}
+.wing-head{display:flex;align-items:center;gap:10px;color:#fff;padding:9px 16px;border-radius:12px 12px 0 0;font-weight:700;font-size:16px}
+.wing-head .wc{margin-left:auto;font-weight:400;font-size:13px;opacity:.95}
+table.res{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-top:0}
+table.res th{background:#faf9f6;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
+table.res td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.res tr:last-child td{border-bottom:0}
+td.rm{font-weight:700;width:64px;color:var(--ink2)}
+td.nm{min-width:180px}
+td.nm .r{font-size:11px;background:#f0eee9;color:var(--ink2);border-radius:999px;padding:1px 7px;margin-left:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:4px 10px;cursor:pointer;color:var(--muted);font-weight:700;font-size:13px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on.H{background:var(--high-bg);color:var(--high)}
+.seg button.on.M{background:var(--med-bg);color:var(--med)}
+.seg button.on.L{background:var(--low-bg);color:var(--low)}
+.seg.st button.on.todo{background:#eef0f2;color:var(--ink2)}
+.seg.st button.on.prog{background:#fbefd9;color:#8a5a0f}
+.seg.st button.on.done{background:#e3f2e8;color:var(--done)}
+.seg.st button.on.na{background:var(--na);color:var(--ink2)}
+td select.team{border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--card);max-width:160px}
+td select.team.unset{color:var(--muted)}
+td input[type=date]{border:1px solid var(--line);border-radius:8px;padding:3px 6px;background:var(--card)}
+td input[type=date].over{border-color:var(--high);color:var(--high);background:var(--high-bg)}
+.meta{font-size:12px;color:var(--muted);margin-top:2px}
+.notebtn{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 10px;cursor:pointer;color:var(--ink2);font-size:13px;white-space:nowrap}
+.notebtn.has{background:var(--accent-soft);border-color:#bcd4d4;color:var(--accent);font-weight:700}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(20,25,30,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.ov.show{display:flex}
+.modal{background:var(--card);border-radius:16px;max-width:460px;width:100%;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;overflow:auto}
+.modal.wide{max-width:640px}
+.modal h3{margin:0 0 4px;font-size:20px}
+.modal .who{color:var(--ink2);margin-bottom:14px}
+.modal label{display:block;font-size:13px;color:var(--ink2);font-weight:600;margin:10px 0 4px}
+.modal input,.modal textarea,.modal select{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.modal textarea{min-height:110px;resize:vertical}
+.modal .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:16px}
+.list-ed{list-style:none;padding:0;margin:8px 0}
+.list-ed li{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.list-ed li input{flex:1}
+.x{border:0;background:transparent;color:var(--high);cursor:pointer;font-size:18px;padding:0 6px}
+
+/* outstanding overlay (dark) */
+#outOv{position:fixed;inset:0;background:#141a20;color:#e9edf1;z-index:60;display:none;overflow:auto;padding:28px}
+#outOv.show{display:block}
+#outOv h2{margin:0 0 4px;font-size:26px}
+#outOv .sub{color:#9aa5b1;margin-bottom:20px}
+#outOv .grp{margin-bottom:22px}
+#outOv .grp h4{margin:0 0 8px;font-size:15px;text-transform:uppercase;letter-spacing:.6px}
+#outOv .it{display:grid;grid-template-columns:70px 1fr 160px 140px;gap:10px;padding:9px 12px;background:#1d252d;border-radius:10px;margin-bottom:6px;align-items:center}
+#outOv .tag{font-size:12px;border-radius:999px;padding:2px 9px;display:inline-block}
+#outOv .close{position:fixed;top:18px;right:24px}
+
+#tip{position:fixed;pointer-events:none;background:#1f2933;color:#fff;padding:6px 10px;border-radius:8px;font-size:13px;display:none;z-index:70}
+
+@media (max-width:980px){.summary{grid-template-columns:1fr}#outOv .it{grid-template-columns:60px 1fr}}
+@media print{
+  header .btn,.filters,.notebtn,#outOv,.ov{display:none!important}
+  header{position:static}
+  body{background:#fff}
+  .wing{break-inside:avoid-page}
+  .seg button:not(.on){display:none}
+  .seg{border:0}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Behaviour Support Plans</h1>
+    <div class="sub">Hamlyn Terrace Care Community · census <span id="censusDate">31/10/2026</span></div>
+  </div>
+  <div class="spacer"></div>
+  <span class="badge" id="sync">⚪ Local only</span>
+  <button class="btn dark" onclick="openOutstanding()">Outstanding</button>
+  <button class="btn" onclick="openTeams()">Teams</button>
+  <button class="btn primary" onclick="openRoster(true)">+ Add resident</button>
+  <button class="btn" onclick="openRoster()">Residents</button>
+  <button class="btn" onclick="exportCSV()">Export CSV</button>
+  <button class="btn" onclick="window.print()">Print</button>
+  <button class="btn" onclick="openFirebase()">Sync</button>
+  <button class="btn danger" onclick="openReset()">Reset</button>
+</header>
+
+<main>
+  <section class="summary">
+    <div class="card">
+      <h2>Completion rate</h2>
+      <div class="hint" id="pieHint">All wings.</div>
+      <div class="pie-wrap">
+        <svg id="pie" width="170" height="170" viewBox="0 0 170 170" role="img" aria-label="Completion pie chart"></svg>
+        <div style="flex:1">
+          <div class="bigpct" id="pct">0%<small> complete</small></div>
+          <ul class="legend" id="legend" style="margin-top:10px"></ul>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>By team</h2>
+      <div class="hint">Completed out of plans assigned to each team.</div>
+      <div id="byTeam"></div>
+    </div>
+    <div class="card">
+      <h2>By priority</h2>
+      <div class="hint">Still to finish, by priority.</div>
+      <div id="byPri"></div>
+    </div>
+  </section>
+
+  <div class="filters">
+    <div class="pills" id="wingPills"></div>
+    <select id="fStatus"><option value="">All statuses</option><option value="todo">Not started</option><option value="prog">In progress</option><option value="done">Completed</option><option value="open">Not completed</option></select>
+    <select id="fPri"><option value="">All priorities</option><option value="H">High</option><option value="M">Medium</option><option value="L">Low</option><option value="-">No priority set</option></select>
+    <select id="fTeam"></select>
+    <input id="fSearch" type="search" placeholder="Search resident or room">
+    <span class="count" id="count"></span>
+  </div>
+
+  <div id="wings"></div>
+</main>
+
+<!-- Record / complete modal -->
+<div class="ov" id="recOv"><div class="modal">
+  <h3 id="recTitle">Mark plan complete</h3>
+  <div class="who" id="recWho"></div>
+  <label for="recStaff">Staff name</label>
+  <input id="recStaff" placeholder="Who completed the plan?">
+  <label for="recWhen">Date and time</label>
+  <input id="recWhen" type="datetime-local">
+  <div class="row">
+    <button class="btn" onclick="closeOv('recOv')">Cancel</button>
+    <button class="btn" onclick="recAction('uncheck')">Uncheck</button>
+    <button class="btn primary" onclick="recAction('done')">Mark Complete</button>
+  </div>
+</div></div>
+
+<!-- Notes modal -->
+<div class="ov" id="noteOv"><div class="modal">
+  <h3>Notes</h3>
+  <div class="who" id="noteWho"></div>
+  <label for="noteText">Triggers, strategies, follow-up, who's involved</label>
+  <textarea id="noteText"></textarea>
+  <div class="meta" id="noteMeta"></div>
+  <div class="row">
+    <button class="btn" onclick="closeOv('noteOv')">Cancel</button>
+    <button class="btn primary" onclick="saveNote()">Save</button>
+  </div>
+</div></div>
+
+<!-- Teams modal -->
+<div class="ov" id="teamOv"><div class="modal">
+  <h3>Teams</h3>
+  <div class="who">Add or rename the teams you assign plans to. Renaming updates every resident on that team.</div>
+  <ul class="list-ed" id="teamList"></ul>
+  <div style="display:flex;gap:8px"><input id="newTeam" placeholder="New team name" style="flex:1;border:1px solid var(--line);border-radius:10px;padding:8px 10px"><button class="btn primary" onclick="addTeam()">Add</button></div>
+  <div class="row"><button class="btn" onclick="closeOv('teamOv')">Done</button></div>
+</div></div>
+
+<!-- Roster modal -->
+<div class="ov" id="rosterOv"><div class="modal wide">
+  <h3>Add or remove residents</h3>
+  <div class="who">Add admissions or remove discharges. Plan details stay with the resident's name, so a room change won't lose them.</div>
+  <div style="display:grid;grid-template-columns:130px 90px 1fr auto;gap:8px;align-items:end">
+    <div><label>Wing</label><select id="rWing"><option>Topaz</option><option>Emerald</option><option>Amethyst</option><option>Ruby</option><option>Sapphire</option></select></div>
+    <div><label>Room</label><input id="rRoom" placeholder="e.g. 214A"></div>
+    <div><label>Name (Surname, First)</label><input id="rName" placeholder="Surname, First"></div>
+    <button class="btn primary" onclick="addRes()">Add</button>
+  </div>
+  <label style="margin-top:14px">Current residents (<span id="rCount"></span>)</label>
+  <input id="rFilter" placeholder="Filter list" oninput="renderRoster()">
+  <ul class="list-ed" id="rosterList" style="max-height:340px;overflow:auto"></ul>
+  <div class="row"><button class="btn" onclick="closeOv('rosterOv')">Done</button></div>
+</div></div>
+
+<!-- Firebase modal -->
+<div class="ov" id="fbOv"><div class="modal">
+  <h3>Real-time sync</h3>
+  <div class="who">This tracker connects to the hamlynweeklynotes project automatically. You only need this if you ever want to point it at a different Firebase project. Data is stored under <b>hamlyn/bsp</b>, separate from the other trackers' data.</div>
+  <textarea id="fbCfg" placeholder='{"apiKey":"...","authDomain":"...","databaseURL":"...","projectId":"..."}'></textarea>
+  <div class="row">
+    <button class="btn danger" onclick="fbDisconnect()">Disconnect</button>
+    <button class="btn" onclick="closeOv('fbOv')">Cancel</button>
+    <button class="btn primary" onclick="fbSave()">Connect</button>
+  </div>
+</div></div>
+
+<!-- Reset modal -->
+<div class="ov" id="resetOv"><div class="modal">
+  <h3>Reset tracker</h3>
+  <div class="who">Clears every priority, team, status and note. The resident list and team names stay. This can't be undone, so export a CSV first.</div>
+  <label for="resetPw">Password</label>
+  <input id="resetPw" type="password">
+  <div class="row">
+    <button class="btn" onclick="closeOv('resetOv')">Cancel</button>
+    <button class="btn danger" onclick="doReset()">Reset everything</button>
+  </div>
+</div></div>
+
+<div id="outOv">
+  <button class="btn close" onclick="document.getElementById('outOv').classList.remove('show')">Close</button>
+  <h2>Outstanding plans</h2>
+  <div class="sub" id="outSub"></div>
+  <div id="outBody"></div>
+</div>
+
+<div id="tip"></div>
+
+<script>
+/* ===== Config ===== */
+// Shared hamlynweeklynotes project, same as the other Hamlyn trackers. Every device auto-connects.
+const DEFAULT_FIREBASE_CONFIG = {
+  databaseURL: 'https://hamlynweeklynotes-default-rtdb.asia-southeast1.firebasedatabase.app',
+  apiKey: 'AIzaSyB_K3XIGfHSU3dSpxVQ98Z195E4T9dD_A8',
+  projectId: 'hamlynweeklynotes'
+};
+const RESET_PASSWORD = 'htcc';
+const ROOT = 'hamlyn/bsp'; // inside the existing hamlyn section, which the database already allows
+const LS_KEY = 'bspTracker_v1';
+const LS_FB = 'bspTracker_fbcfg';
+
+const WINGS = ['Topaz','Emerald','Amethyst','Ruby','Sapphire'];
+const WING_COL = {Topaz:'var(--topaz)',Emerald:'var(--emerald)',Amethyst:'var(--amethyst)',Ruby:'var(--ruby)',Sapphire:'var(--sapphire)'};
+const STATUS = {todo:'Not started',prog:'In progress',done:'Completed'};
+const PRI = {H:'High',M:'Medium',L:'Low'};
+const DEFAULT_TEAMS = ['Team A','Team B','Team C'];
+
+// From census 31/10/2026: [wing, room, "Surname, First", respite?]
+const CENSUS = [["Topaz","101A","Elliott, Lorraine"],["Topaz","101B","Nickel, Jeannette"],["Topaz","102A","Lewis, Lynda"],["Topaz","102B","Paterson, Jill"],["Topaz","103A","Winters, Anna"],["Topaz","103B","Middleton, Valerie"],["Topaz","104A","Shelly, Christine"],["Topaz","105A","Ramsay, Deborah"],["Topaz","106A","Rogers, Maria"],["Topaz","107A","Thew, Gail"],["Topaz","108A","Hughes, Christine"],["Topaz","109A","McKenzie, Pamela"],["Topaz","110A","Fonti, Roslyn"],["Topaz","111A","Cresdee, Janice"],["Topaz","112A","Girkin, David"],["Topaz","113A","Gordon, Elizabeth"],["Topaz","114A","Scott, Beatrice"],["Topaz","115A","Muscat, Francis"],["Topaz","116A","Smith, John"],["Topaz","117A","Boswell, Betty"],["Topaz","118A","Holden, Mark"],["Topaz","119A","Murphy, Helen"],["Topaz","120A","Bentley, Leonard"],["Topaz","121A","Lammi, Heidi"],["Topaz","122A","Jones, Noeline"],["Topaz","123A","Young, Mabel"],["Topaz","124A","Davies, Mary"],["Topaz","125A","Locantro, Joseph"],["Topaz","126A","Michailow, William"],["Topaz","126B","Walker, Kenneth"],["Topaz","127A","Troncone, Alicia"],["Topaz","127B","Yates, Lynette"],["Topaz","128A","Hall, Jon"],["Topaz","128B","Smith, Anthony"],["Emerald","129A","Campion, Peter"],["Emerald","129B","Wilson, Peter"],["Amethyst","130A","Walsh, Diane"],["Amethyst","130B","Charlebois, Lemander"],["Amethyst","131A","Gardner, Lea"],["Amethyst","132A","Maritz, Elizabeth"],["Amethyst","133A","Wheildon, Colin"],["Amethyst","133B","Simmons, Bernard"],["Amethyst","134A","Green, Valmai"],["Amethyst","135A","Hockley, Gloria"],["Amethyst","135B","Parker, Margaret"],["Amethyst","136A","Boan, Doreen"],["Amethyst","136B","Nelson, Gail"],["Amethyst","137A","Gollan, Barbara"],["Amethyst","137B","Jolliffe, Cynthia"],["Amethyst","138A","Buck, Edwin"],["Amethyst","139A","Schofield, Norma"],["Emerald","140A","Farleigh, Norman"],["Emerald","141A","Williams, Harold"],["Emerald","142A","Whiteman, Janet"],["Emerald","143A","McKean, Glenys"],["Emerald","144A","Thorley, Elaine"],["Emerald","145A","Ryan, Fay"],["Emerald","146A","Connor, Leslie"],["Emerald","147A","Freyer, Rolf"],["Emerald","148A","Abrahams, Michael"],["Emerald","148B","Cartwright, Kenneth"],["Emerald","149A","Parker, John"],["Emerald","149B","Henchy, Patrick"],["Emerald","150A1","Gilkison, Anne"],["Emerald","150B","Gardiner, Judith"],["Emerald","151A","Doyle, Patricia"],["Emerald","151B","Doyle, Robert"],["Ruby","201A","Nemorin, Jacques"],["Ruby","201B","Nemorin, Maryse"],["Ruby","202B","Marquart, Leonie"],["Ruby","203A","Gough, Kenneth"],["Ruby","203B","De Rome, James"],["Ruby","204A","Stevenson, Verlie"],["Ruby","205A","Beattie, Allan"],["Ruby","206A","Badiyan, Mahin"],["Ruby","207A","Legg, Marie"],["Ruby","208A","Baldock, Jeanice"],["Ruby","209A","Henley, Margaret"],["Ruby","210A","Arnold, Linda"],["Ruby","211A","Horvath, Irene"],["Ruby","212A","Jacobson, Fay"],["Ruby","213A","Gray, Marion"],["Ruby","215A","Druce, Gaye"],["Ruby","216A","McRae, Norma"],["Ruby","217A","Bailey, Mavis"],["Ruby","218A","Cobley, Mark"],["Ruby","219A","McGarry, Maree"],["Ruby","220A","Weber, Sydney"],["Ruby","221A","Brinley, Jacqueline"],["Ruby","223A","McDowell, Brian"],["Ruby","224A","Bibby, Thomas"],["Ruby","225A","Whatman, Robyn","R"],["Ruby","226A","King, Daphne"],["Ruby","226B","Higgins, Rita"],["Ruby","227A","Lawson, Lorraine"],["Ruby","227B","Brightfield, Joan"],["Ruby","228A","Sheather, Robert"],["Ruby","228B","Smith, Ronald"],["Sapphire","229A","Ogilvie, Audrey"],["Sapphire","229B","Haswell, Janice"],["Sapphire","230A1","Stokes, Colin"],["Sapphire","230B","Dickens, Warren"],["Sapphire","231A1","Campbell, Neville"],["Sapphire","231B","Campbell, Barbara"],["Sapphire","232A1","Priestly, Lawrence"],["Sapphire","232B","Priestly, Ann"],["Sapphire","234A","Wysocki, Cheryle"],["Sapphire","235A","Rooksberry, Joy"],["Sapphire","235B","Newing, Leila"],["Sapphire","236A","McMillan, John"],["Sapphire","236B","McMillan, Dorothy"],["Sapphire","237A","Hetherington, Willis"],["Sapphire","238A","Cruickshank, Margaret"],["Sapphire","238B","Tregear, Elaine"],["Sapphire","239A","Lindsay, June"],["Sapphire","240A","Welch, Rosalind"],["Sapphire","241A","Bruce, Alan"],["Sapphire","242A","Godwin, Yvonne"],["Sapphire","243A","Hennessey, Vera"],["Sapphire","243B","Brodie, Leonie"],["Sapphire","244A","Hetherington, Helen"],["Sapphire","245A","Anthoney, Valerie"],["Sapphire","246A","Harten, Irene"],["Sapphire","247A","Bond, Iris"],["Sapphire","248A","Parkes, Bethwyn"],["Sapphire","249A","Leese, Katherine"],["Sapphire","250A","McCoy, James"],["Sapphire","251A","Greenland, Norman"],["Sapphire","252A","Lott, Anne"],["Sapphire","253A","Doab, Lynne"],["Sapphire","254A","Jeffree, Joyce"],["Sapphire","255A","Smart, Dorothy"],["Sapphire","255B","Clarke, Kimberline"],["Sapphire","256A","Norrie, Valerie"],["Sapphire","256B","Mingo, Pamela"],["Sapphire","257A","Nipperess, Dorothy"],["Sapphire","257B","Holderness, Eleanor"],["Sapphire","258A","Lagats, Barbara"]];
+
+/* ===== State ===== */
+let state = {roster:null, teams:null, res:{}};
+let db = null, dbRef = null;
+const ui = {wing:'All', status:'', pri:'', team:'', q:''};
+
+function keyOf(name){return name.trim().toLowerCase().replace(/[.#$\/\[\]]/g,'_').replace(/\s+/g,' ');}
+function roster(){return state.roster || CENSUS.map(r=>({w:r[0],b:r[1],n:r[2],resp:!!r[3]}));}
+function teams(){return state.teams || DEFAULT_TEAMS;}
+function rec(name){return state.res[keyOf(name)] || {};}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function todayISO(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);}
+function fmtDate(iso){if(!iso)return '';const [y,m,d]=iso.slice(0,10).split('-');return `${d}/${m}/${y}`;}
+function fmtDT(iso){if(!iso)return '';const d=new Date(iso);return d.toLocaleDateString('en-AU')+' '+d.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});}
+function statusOf(r){return STATUS[r.status]?r.status:'todo';}
+
+/* ===== Storage ===== */
+function loadLocal(){try{const s=JSON.parse(localStorage.getItem(LS_KEY)||'null');if(s)state={roster:s.roster||null,teams:s.teams||null,res:s.res||{}};}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+
+function setRes(name, patch){
+  const k=keyOf(name);
+  const cur=Object.assign({}, state.res[k]||{}, {name});
+  Object.keys(patch).forEach(p=>{ if(patch[p]===null||patch[p]===undefined||patch[p]==='') delete cur[p]; else cur[p]=patch[p]; });
+  state.res[k]=cur; saveLocal();
+  if(dbRef){ setSync('🔄 Syncing…'); dbRef.child('res/'+k).set(cur).then(()=>setSync('🟢 Synced')).catch(fbErr); }
+  render();
+}
+function setTop(field, val){
+  state[field]=val; saveLocal();
+  if(dbRef){ setSync('🔄 Syncing…'); dbRef.child(field).set(val).then(()=>setSync('🟢 Synced')).catch(fbErr); }
+  render();
+}
+
+/* ===== Firebase ===== */
+function setSync(t){document.getElementById('sync').textContent=t;}
+function fbErr(e){console.error(e);setSync('🔴 Sync error');document.getElementById('sync').title=String(e&&e.message||e);}
+function fbConfig(){try{return JSON.parse(localStorage.getItem(LS_FB)||'null')||DEFAULT_FIREBASE_CONFIG;}catch(e){return DEFAULT_FIREBASE_CONFIG;}}
+function fbConnect(){
+  const cfg=fbConfig(); if(!cfg||typeof firebase==='undefined'){setSync('⚪ Local only');return;}
+  try{
+    const app = firebase.apps.find(a=>a.name==='bsp') || firebase.initializeApp(cfg,'bsp');
+    db = app.database(); dbRef = db.ref(ROOT); setSync('🔄 Connecting…');
+    let first=true;
+    dbRef.on('value', snap=>{
+      const v=snap.val();
+      if(first && !v){ // empty remote: seed it with whatever is on this device
+        first=false; dbRef.set({roster:state.roster||null,teams:state.teams||null,res:state.res||{}}).then(()=>setSync('🟢 Synced')).catch(fbErr); return;
+      }
+      first=false;
+      if(v){ state={roster:v.roster||null,teams:v.teams||null,res:v.res||{}}; saveLocal(); }
+      setSync('🟢 Synced');
+      if(!isEditing()) render(); else pendingRender=true;
+    }, fbErr);
+    db.ref('.info/connected').on('value',s=>{ if(s.val()===false) setSync('🔴 Offline'); });
+  }catch(e){fbErr(e);}
+}
+let pendingRender=false;
+function isEditing(){const a=document.activeElement;return a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && !a.closest('.filters');}
+document.addEventListener('focusout',()=>setTimeout(()=>{if(pendingRender&&!isEditing()){pendingRender=false;render();}},50));
+
+function openFirebase(){const c=fbConfig();document.getElementById('fbCfg').value=c?JSON.stringify(c,null,2):'';openOv('fbOv');}
+function fbSave(){
+  let txt=document.getElementById('fbCfg').value.trim();
+  // allow pasting the JS snippet: const firebaseConfig = {...};
+  const m=txt.match(/\{[\s\S]*\}/); if(m) txt=m[0];
+  let cfg; try{cfg=JSON.parse(txt);}catch(e){try{cfg=Function('"use strict";return ('+txt+')')();}catch(e2){alert('That config could not be read. Paste the {...} object from Firebase.');return;}}
+  if(!cfg.databaseURL){alert('The config needs a databaseURL.');return;}
+  localStorage.setItem(LS_FB,JSON.stringify(cfg)); closeOv('fbOv'); location.reload();
+}
+function fbDisconnect(){localStorage.removeItem(LS_FB);closeOv('fbOv');location.reload();}
+
+/* ===== Filtering ===== */
+function matches(r){
+  const d=rec(r.n), st=statusOf(d);
+  if(ui.wing==='Downstairs' && !['Topaz','Emerald','Amethyst'].includes(r.w)) return false;
+  if(ui.wing==='Upstairs' && !['Ruby','Sapphire'].includes(r.w)) return false;
+  if(WINGS.includes(ui.wing) && r.w!==ui.wing) return false;
+  if(ui.status==='open'){ if(st==='done') return false; }
+  else if(ui.status && st!==ui.status) return false;
+  if(ui.pri==='-'){ if(d.priority) return false; } else if(ui.pri && d.priority!==ui.pri) return false;
+  if(ui.team==='-'){ if(d.team) return false; } else if(ui.team && d.team!==ui.team) return false;
+  if(ui.q){ const q=ui.q.toLowerCase(); if(!(r.n.toLowerCase().includes(q)||r.b.toLowerCase().includes(q))) return false; }
+  return true;
+}
+function roomSort(a,b){return a.b.localeCompare(b.b,undefined,{numeric:true});}
+
+/* ===== Render ===== */
+function render(){
+  renderFilters(); renderSummary(); renderWings();
+}
+function renderFilters(){
+  const opts=['All',...WINGS,'Downstairs','Upstairs'];
+  document.getElementById('wingPills').innerHTML=opts.map(w=>`<button class="pill ${ui.wing===w?'on':''}" onclick="ui.wing='${w}';render()">${w}</button>`).join('');
+  const ft=document.getElementById('fTeam'), cur=ui.team;
+  ft.innerHTML=`<option value="">All teams</option>`+teams().map(t=>`<option ${cur===t?'selected':''}>${esc(t)}</option>`).join('')+`<option value="-" ${cur==='-'?'selected':''}>Unassigned</option>`;
+}
+function scopeRoster(){ // summary follows the wing filter only, so the pie answers "how are we going in this area"
+  return roster().filter(r=>{
+    if(ui.wing==='Downstairs') return ['Topaz','Emerald','Amethyst'].includes(r.w);
+    if(ui.wing==='Upstairs') return ['Ruby','Sapphire'].includes(r.w);
+    if(WINGS.includes(ui.wing)) return r.w===ui.wing;
+    return true;
+  });
+}
+function renderSummary(){
+  const list=scopeRoster();
+  const c={done:0,prog:0,todo:0};
+  list.forEach(r=>c[statusOf(rec(r.n))]++);
+  const total=c.done+c.prog+c.todo;
+  const pct= total? Math.round(c.done/total*100):0;
+  document.getElementById('pct').innerHTML=`${pct}%<small> complete · ${c.done} of ${total}</small>`;
+  document.getElementById('pieHint').textContent = (ui.wing==='All'?'All wings':ui.wing)+' · '+total+' residents';
+  const slices=[['done','Completed','var(--done)'],['prog','In progress','var(--prog)'],['todo','Not started','var(--todo)']];
+  drawPie(slices.map(s=>({k:s[0],label:s[1],col:s[2],v:c[s[0]]})), total);
+  document.getElementById('legend').innerHTML = slices.map(s=>`<li><span class="sw" style="background:${s[2]}"></span>${s[1]}<span class="v">${c[s[0]]} · ${total?Math.round(c[s[0]]/total*100):0}%</span></li>`).join('')
+;
+
+  // by team
+  const tm={}; [...teams(),'Unassigned'].forEach(t=>tm[t]={a:0,d:0});
+  list.forEach(r=>{const d=rec(r.n);const st=statusOf(d); if(!d.team && !d.priority && st==='todo') return; const t=d.team&&tm[d.team]?d.team:'Unassigned'; tm[t].a++; if(st==='done')tm[t].d++;});
+  const rows=Object.entries(tm).filter(([t,v])=>v.a>0);
+  document.getElementById('byTeam').innerHTML = rows.length? `<table class="mini"><tr><th>Team</th><th></th><th style="text-align:right">Done</th></tr>`+rows.map(([t,v])=>`<tr><td><a href="#" onclick="ui.team='${t==='Unassigned'?'-':esc(t)}';render();return false" style="color:inherit">${esc(t)}</a></td><td style="width:45%"><div class="bar"><span style="width:${Math.round(v.d/v.a*100)}%"></span></div></td><td class="n">${v.d}/${v.a}</td></tr>`).join('')+`</table>` : `<div class="empty">No plans assigned yet. Pick a team or priority on a resident to start tracking.</div>`;
+
+  // by priority
+  const pr={H:0,M:0,L:0,'-':0}, prDone={H:0,M:0,L:0,'-':0};
+  list.forEach(r=>{const d=rec(r.n),st=statusOf(d); const p=d.priority||'-'; if(p==='-'&&!d.team&&st==='todo')return; if(st==='done')prDone[p]++; else pr[p]++;});
+  const pc={H:'var(--high)',M:'var(--med)',L:'var(--low)','-':'var(--muted)'};
+  const pl={H:'High',M:'Medium',L:'Low','-':'Not set'};
+  const anyP=Object.keys(pr).some(k=>pr[k]+prDone[k]>0);
+  document.getElementById('byPri').innerHTML = anyP? `<table class="mini"><tr><th>Priority</th><th style="text-align:right">To do</th><th style="text-align:right">Done</th></tr>`+Object.keys(pr).filter(k=>pr[k]+prDone[k]>0).map(k=>`<tr><td><a href="#" onclick="ui.pri='${k}';ui.status='open';syncFilterInputs();render();return false" style="color:inherit"><span class="sw" style="display:inline-block;background:${pc[k]};margin-right:6px;vertical-align:-1px"></span>${pl[k]}</a></td><td class="n"><b>${pr[k]}</b></td><td class="n">${prDone[k]}</td></tr>`).join('')
+    + `</table>` : `<div class="empty">No priorities set yet.</div>`;
+}
+function drawPie(data,total){
+  const svg=document.getElementById('pie'), cx=85, cy=85, R=80;
+  if(!total){svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="#efece6"/><text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="13" fill="#8a94a0">No plans yet</text>`;return;}
+  let a=-Math.PI/2, out='';
+  const nz=data.filter(d=>d.v>0);
+  nz.forEach(d=>{
+    const frac=d.v/total, a2=a+frac*2*Math.PI;
+    const title=`${d.label}: ${d.v} (${Math.round(frac*100)}%)`;
+    if(nz.length===1){ out+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="${d.col}" data-t="${title}"/>`; }
+    else{
+      const x1=cx+R*Math.cos(a), y1=cy+R*Math.sin(a), x2=cx+R*Math.cos(a2), y2=cy+R*Math.sin(a2);
+      out+=`<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${frac>.5?1:0} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${d.col}" stroke="#fff" stroke-width="2" stroke-linejoin="round" data-t="${title}" data-k="${d.k}"/>`;
+    }
+    a=a2;
+  });
+  svg.innerHTML=out;
+  svg.querySelectorAll('[data-t]').forEach(el=>{
+    el.addEventListener('mousemove',e=>showTip(e,el.dataset.t));
+    el.addEventListener('mouseleave',hideTip);
+    el.addEventListener('click',()=>{ if(el.dataset.k){ui.status=el.dataset.k;syncFilterInputs();render();} });
+  });
+}
+function showTip(e,t){const tp=document.getElementById('tip');tp.textContent=t;tp.style.display='block';tp.style.left=(e.clientX+12)+'px';tp.style.top=(e.clientY+12)+'px';}
+function hideTip(){document.getElementById('tip').style.display='none';}
+
+function renderWings(){
+  const all=roster(); const shown=all.filter(matches);
+  document.getElementById('count').textContent=`Showing ${shown.length} of ${all.length} residents`;
+  let html='';
+  WINGS.forEach(w=>{
+    const rows=shown.filter(r=>r.w===w).sort(roomSort);
+    if(!rows.length) return;
+    const wingAll=all.filter(r=>r.w===w);
+    const wDone=wingAll.filter(r=>statusOf(rec(r.n))==='done').length;
+    const wReq=wingAll.length;
+    html+=`<div class="wing"><div class="wing-head" style="background:${WING_COL[w]}">${w}<span class="wc">${wDone} of ${wReq} complete</span></div>
+    <table class="res"><thead><tr><th>Room</th><th>Resident</th><th>Priority</th><th>Team</th><th>Status</th><th></th></tr></thead><tbody>`;
+    rows.forEach(r=>{
+      const d=rec(r.n), st=statusOf(d), nm=esc(r.n).replace(/'/g,"\\'"), id=encodeURIComponent(r.n);
+      const pri=['H','M','L'].map(p=>`<button class="${p} ${d.priority===p?'on':''}" title="${PRI[p]}" onclick="setPri('${id}','${p}')">${p}</button>`).join('');
+      const tsel=`<select class="team ${d.team?'':'unset'}" onchange="setRes(decodeURIComponent('${id}'),{team:this.value})"><option value="">— Assign —</option>${teams().map(t=>`<option ${d.team===t?'selected':''}>${esc(t)}</option>`).join('')}${d.team&&!teams().includes(d.team)?`<option selected>${esc(d.team)}</option>`:''}</select>`;
+      const sts=['todo','prog','done'].map(s=>`<button class="${s} ${st===s?'on':''}" onclick="setStatus('${id}','${s}')">${{todo:'Not started',prog:'In progress',done:'Complete'}[s]}</button>`).join('');
+      const meta = st==='done' && (d.by||d.at) ? `<div class="meta">✓ ${esc(d.by||'')}${d.at?' · '+fmtDT(d.at):''}</div>` : '';
+      html+=`<tr><td class="rm">${esc(r.b)}</td><td class="nm">${esc(r.n)}${r.resp?'<span class="r">Respite</span>':''}</td>
+      <td><div class="seg">${pri}</div></td><td>${tsel}</td><td><div class="seg st">${sts}</div>${meta}</td>
+      <td><button class="notebtn ${d.notes?'has':''}" onclick="openNote('${id}')">${d.notes?'Notes ✎':'+ Note'}</button></td></tr>`;
+    });
+    html+='</tbody></table></div>';
+  });
+  document.getElementById('wings').innerHTML = html || `<div class="card empty">No residents match these filters.</div>`;
+}
+
+/* ===== Actions ===== */
+function setPri(id,p){const n=decodeURIComponent(id);setRes(n,{priority: rec(n).priority===p?null:p});}
+let recName=null;
+function setStatus(id,s){
+  const n=decodeURIComponent(id);
+  if(s==='done'){ openRec(n); return; }
+  const patch={status: s==='todo'?null:s};
+  if(statusOf(rec(n))==='done'){ patch.by=null; patch.at=null; }
+  setRes(n,patch);
+}
+function openRec(n){
+  recName=n; const d=rec(n);
+  document.getElementById('recWho').textContent=n;
+  document.getElementById('recStaff').value=d.by||localStorage.getItem('bsp_lastStaff')||'';
+  const now=new Date(d.at||Date.now()); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('recWhen').value=now.toISOString().slice(0,16);
+  openOv('recOv'); setTimeout(()=>document.getElementById('recStaff').focus(),50);
+}
+function recAction(a){
+  const n=recName; if(!n) return;
+  if(a==='done'){
+    const by=document.getElementById('recStaff').value.trim();
+    if(!by){alert('Please add the staff name.');return;}
+    localStorage.setItem('bsp_lastStaff',by);
+    const when=document.getElementById('recWhen').value;
+    setRes(n,{status:'done',by,at: when?new Date(when).toISOString():new Date().toISOString()});
+  } else if(a==='uncheck'){ setRes(n,{status:null,by:null,at:null}); }
+  closeOv('recOv');
+}
+let noteName=null;
+function openNote(id){
+  noteName=decodeURIComponent(id); const d=rec(noteName);
+  document.getElementById('noteWho').textContent=noteName;
+  document.getElementById('noteText').value=d.notes||'';
+  document.getElementById('noteMeta').textContent=d.notesAt?'Last updated '+fmtDT(d.notesAt):'';
+  openOv('noteOv'); setTimeout(()=>document.getElementById('noteText').focus(),50);
+}
+function saveNote(){const t=document.getElementById('noteText').value.trim();setRes(noteName,{notes:t||null,notesAt:t?new Date().toISOString():null});closeOv('noteOv');}
+
+/* Teams */
+function openTeams(){renderTeams();openOv('teamOv');}
+function renderTeams(){
+  document.getElementById('teamList').innerHTML=teams().map((t,i)=>{
+    const n=Object.values(state.res).filter(r=>r.team===t).length;
+    return `<li><input value="${esc(t)}" onchange="renameTeam(${i},this.value)" style="border:1px solid var(--line);border-radius:10px;padding:6px 10px"><span class="meta">${n} resident${n===1?'':'s'}</span><button class="x" title="Remove" onclick="delTeam(${i})">×</button></li>`;}).join('') || '<li class="empty">No teams yet.</li>';
+}
+function addTeam(){const el=document.getElementById('newTeam');const v=el.value.trim();if(!v)return;if(teams().includes(v)){alert('That team already exists.');return;}setTop('teams',[...teams(),v]);el.value='';renderTeams();}
+function renameTeam(i,v){
+  v=v.trim(); const old=teams()[i]; if(!v||v===old){renderTeams();return;}
+  if(teams().includes(v)){alert('That team already exists.');renderTeams();return;}
+  const t=[...teams()]; t[i]=v; setTop('teams',t);
+  Object.values(state.res).filter(r=>r.team===old).forEach(r=>setRes(r.name,{team:v}));
+  renderTeams();
+}
+function delTeam(i){
+  const t=teams()[i]; const n=Object.values(state.res).filter(r=>r.team===t).length;
+  if(!confirm(`Remove ${t}?`+(n?` ${n} resident${n===1?'':'s'} will go back to unassigned.`:'')))return;
+  Object.values(state.res).filter(r=>r.team===t).forEach(r=>setRes(r.name,{team:null}));
+  setTop('teams',teams().filter((_,j)=>j!==i)); renderTeams();
+}
+
+/* Roster */
+function openRoster(add){document.getElementById('rFilter').value='';renderRoster();openOv('rosterOv');if(add)setTimeout(()=>document.getElementById('rRoom').focus(),50);}
+function renderRoster(){
+  const f=document.getElementById('rFilter').value.toLowerCase();
+  const list=roster().slice().sort((a,b)=>WINGS.indexOf(a.w)-WINGS.indexOf(b.w)||roomSort(a,b));
+  document.getElementById('rCount').textContent=list.length;
+  document.getElementById('rosterList').innerHTML=list.map((r,i)=>({r,i})).filter(o=>!f||o.r.n.toLowerCase().includes(f)||o.r.b.toLowerCase().includes(f)).map(({r})=>
+    `<li><span style="width:80px;color:${WING_COL[r.w]};font-weight:700">${r.w}</span><span style="width:60px">${esc(r.b)}</span><span style="flex:1">${esc(r.n)}</span><button class="x" title="Remove" onclick="delRes('${encodeURIComponent(r.n)}','${encodeURIComponent(r.b)}')">×</button></li>`).join('');
+}
+function addRes(){
+  const w=document.getElementById('rWing').value, b=document.getElementById('rRoom').value.trim().toUpperCase(), n=document.getElementById('rName').value.trim();
+  if(!b||!n){alert('Add a room and a name.');return;}
+  if(roster().some(r=>keyOf(r.n)===keyOf(n))){alert('That name is already on the list.');return;}
+  setTop('roster',[...roster(),{w,b,n}]);
+  document.getElementById('rRoom').value='';document.getElementById('rName').value='';renderRoster();
+  flash(`${n} added to ${w}`);
+}
+function delRes(nEnc,bEnc){
+  const n=decodeURIComponent(nEnc),b=decodeURIComponent(bEnc);
+  if(!confirm(`Remove ${n} (${b}) from the tracker? Their plan details are kept in case they're re-added.`))return;
+  setTop('roster',roster().filter(r=>!(r.n===n&&r.b===b))); renderRoster();
+}
+
+/* Outstanding overlay */
+function openOutstanding(){
+  const list=scopeRoster().filter(r=>{const s=statusOf(rec(r.n));return s!=='done'&&(rec(r.n).priority||rec(r.n).team);});
+  const grp=[['H','High priority','#f97066'],['M','Medium priority','#fdb022'],['L','Low priority','#53b1fd'],['-','No priority set','#9aa5b1']];
+  let html='';
+  const item=r=>{const d=rec(r.n);return `<div class="it"><b>${esc(r.b)}</b><span>${esc(r.n)}</span><span style="color:#9aa5b1">${esc(d.team||'Unassigned')}</span><span>${STATUS[statusOf(d)]}</span></div>`;};
+  grp.forEach(([k,label,col])=>{
+    const rs=list.filter(r=>(rec(r.n).priority||'-')===k).sort((a,b)=>WINGS.indexOf(a.w)-WINGS.indexOf(b.w)||roomSort(a,b));
+    if(rs.length) html+=`<div class="grp"><h4 style="color:${col}">${label} · ${rs.length}</h4>${rs.map(item).join('')}</div>`;
+  });
+  document.getElementById('outBody').innerHTML=html||'<p style="color:#9aa5b1">Nothing outstanding. Nice work.</p>';
+  document.getElementById('outSub').textContent=(ui.wing==='All'?'All wings':ui.wing)+' · plans that have a priority or team but aren\'t complete yet';
+  document.getElementById('outOv').classList.add('show');
+}
+
+/* CSV */
+function exportCSV(){
+  const head=['Wing','Room','Resident','Resident type','Priority','Team','Status','Completed by','Completed at','Notes'];
+  const rows=roster().slice().sort((a,b)=>WINGS.indexOf(a.w)-WINGS.indexOf(b.w)||roomSort(a,b)).map(r=>{const d=rec(r.n);return [r.w,r.b,r.n,r.resp?'Respite':'Permanent',PRI[d.priority]||'',d.team||'',STATUS[statusOf(d)],d.by||'',d.at?fmtDT(d.at):'',d.notes||''];});
+  const csv=[head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));a.download=`BSP_Tracker_${todayISO()}.csv`;a.click();
+}
+
+/* Reset */
+function openReset(){document.getElementById('resetPw').value='';openOv('resetOv');setTimeout(()=>document.getElementById('resetPw').focus(),50);}
+function doReset(){
+  if(document.getElementById('resetPw').value!==RESET_PASSWORD){alert('Incorrect password.');return;}
+  state.res={}; saveLocal();
+  if(dbRef) dbRef.child('res').remove().then(()=>setSync('🟢 Synced')).catch(fbErr);
+  closeOv('resetOv'); render();
+}
+
+function flash(msg){const tp=document.getElementById('tip');tp.textContent='✓ '+msg;tp.style.display='block';tp.style.left='50%';tp.style.top='20px';tp.style.transform='translateX(-50%)';tp.style.zIndex=80;clearTimeout(flash.t);flash.t=setTimeout(()=>{tp.style.display='none';tp.style.transform='';},2200);}
+['rRoom','rName'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')addRes();}));
+
+/* Modals + filters */
+function openOv(id){document.getElementById(id).classList.add('show');}
+function closeOv(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.ov.show').forEach(o=>o.classList.remove('show'));document.getElementById('outOv').classList.remove('show');}});
+function syncFilterInputs(){document.getElementById('fStatus').value=ui.status;document.getElementById('fPri').value=ui.pri;}
+document.getElementById('fStatus').onchange=e=>{ui.status=e.target.value;render();};
+document.getElementById('fPri').onchange=e=>{ui.pri=e.target.value;render();};
+document.getElementById('fTeam').onchange=e=>{ui.team=e.target.value;render();};
+document.getElementById('fSearch').oninput=e=>{ui.q=e.target.value.trim();renderWings();};
+document.getElementById('newTeam').addEventListener('keydown',e=>{if(e.key==='Enter')addTeam();});
+
+loadLocal(); render(); fbConnect();
+</script>
+</body>
+</html>
